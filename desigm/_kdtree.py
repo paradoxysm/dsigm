@@ -125,7 +125,7 @@ class KDTree:
 			The KDTree node whose value matches the point.
 			None if the point was not found in the tree.
 		"""
-		if self.k != check_dimensionality(point):
+		if self.k != utils.check_dimensionality(point):
 			raise ValueError("Point must be same dimensionality as the KDTree")
 		if self.value is None:
 			raise ValueError("KDTree is empty")
@@ -185,7 +185,7 @@ class KDTree:
 		distances : list or None, default=None
 			The list of distances corresponding to `neighbors`.
 		"""
-		if self.k != check_dimensionality(point):
+		if self.k != utils.check_dimensionality(point):
 			raise ValueError("Point must be same dimensionality as the KDTree")
 		if self.value is None:
 			raise ValueError("KDTree is empty")
@@ -231,7 +231,7 @@ class KDTree:
 		distances : list or None, default=None
 			The list of distances corresponding to `neighbors`.
 		"""
-		if self.k != check_dimensionality(point):
+		if self.k != utils.check_dimensionality(point):
 			raise ValueError("Point must be same dimensionality as the KDTree")
 		if d == 0:
 			return neighbors, distances
