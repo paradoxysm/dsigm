@@ -5,7 +5,7 @@
 
 import numpy as np
 
-import _utils as utils
+import ._utils as utils
 
 class KDTree:
 	"""

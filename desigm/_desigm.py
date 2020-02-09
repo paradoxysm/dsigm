@@ -3,6 +3,10 @@
 # Authors: Jeffrey Wang
 # License: BSD 3 clause
 
+import numpy as np
+
+import ._utils as utils
+
 class DESIGM:
 	"""
 	A Clustering Model using the DESIGM Clustering Algorithm.
