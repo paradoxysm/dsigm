@@ -15,20 +15,19 @@ setup(
     long_description=(read('README.md') + '\n\n'),
 	url='http://github.com/paradoxysm/desigm',
     author='paradoxysm',
-    license='GPLv3+',
+    license='BSD-3-Clause',
     packages=find_packages(),
     install_requires=[
     	'scipy',
 		'sklearn',
-		'numpy',
-		'tqdm'
+		'numpy'
     ],
 	python_requires='>=2.7, >=3.4, <4',
 	classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'Natural Language :: English',
-        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+        'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
