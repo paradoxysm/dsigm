@@ -88,12 +88,12 @@ class KDTree:
 		axis = depth % (k + 1)
 		points = sorted(points, key=lambda x: x[axis])
 		median = len(points) // 2
-		tree = KDCoreTree(value=points[median], k=k, axis=axis, tol=tol)
+		tree = KDTree(value=points[median], k=k, axis=axis, tol=tol)
 		rh, rn, lh, ln = 0, 0, 0, 0
 		if len(points[median+1:]) > 0:
-			tree.right, rh, rn = KDCoreTree.initialize(points[median+1:], depth=axis+1, tol=tol)
+			tree.right, rh, rn = KDTree.initialize(points[median+1:], depth=axis+1, tol=tol)
 		if len(points[:median]) > 0:
-			tree.left, lh, ln = KDCoreTree.initialize(points[:median], depth=axis+1, tol=tol)
+			tree.left, lh, ln = KDTree.initialize(points[:median], depth=axis+1, tol=tol)
 		tree.height += rh + lh
 		tree.nodes += rn + ln
 		return tree, tree.height, tree.nodes
@@ -125,7 +125,22 @@ class KDTree:
 			The KDTree node whose value matches the point.
 			None if the point was not found in the tree.
 		"""
-		pass
+		if self.k != checkDimensionality(point):
+			raise ValueError("Point must be same dimensionality as the KDTree")
+		if self.value is None:
+			raise ValueError("KDTree is empty")
+		elif self.value == point:
+			return self
+		elif point[self.axis] > self.value[self.axis]:
+			if self.right is None:
+				return None
+			else:
+				return self.right.search(point)
+		else:
+			if self.left is None:
+				return None
+			else:
+				return self.left.search(point)
 
 	def delete(self, point):
 		"""
@@ -173,7 +188,7 @@ class KDTree:
 		if self.k != checkDimensionality(point):
 			raise ValueError("Point must be same dimensionality as the KDTree")
 		if self.value is None:
-			raise ValueError("KDCoreTree is empty")
+			raise ValueError("KDTree is empty")
 		if distances is None or neighbors is None:
 			distances = [np.inf] * n
 			neighbors = [None] * n
@@ -221,7 +236,7 @@ class KDTree:
 		if d == 0:
 			return neighbors, distances
 		if self.value is None:
-			raise ValueError("KDCoreTree is empty")
+			raise ValueError("KDTree is empty")
 		if distances is None or neighbors is None:
 			distances = []
 			neighbors = []
