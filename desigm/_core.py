@@ -83,9 +83,9 @@ class CoreCluster:
 	children : array-like, shape (some_cores,), default=[]
 		A list of CoreCluster children in a hierarchical manner.
 	"""
-	def __init__(self, cores=[], parent=None, children=[]):
+	def __init__(self, cores=[], parents=[], children=[]):
 		self.cores = np.asarray(cores)
-		self.parent = parent
+		self.parent = np.asarray(parents)
 		self.children = np.asarray(children)
 		self._validate_init()
 
@@ -99,8 +99,11 @@ class CoreCluster:
 		if len(core_types) != 1 or Core not in core_types:
 			raise ValueError("Invalid argument provided for cores. Must be a list of Cores")
 
-		if not isinstance(self.parent, (None, CoreCluster)):
-			raise ValueError("Invalid argument provided for parent. Must be None or CoreCluster. Found " + type(self.parent).__name__)
+		if np.isscalar(self.parents):
+			raise ValueError("Invalid argument provided for parents. Must be a list of CoreClusters")
+		parent_types = set([type(item) for item in self.parents])
+		if len(parent_types) != 1 or CoreCluster not in parent_types:
+			raise ValueError("Invalid argument provided for parents. Must be a list of CoreClusters")
 
 		if np.isscalar(self.children):
 			raise ValueError("Invalid argument provided for children. Must be a list of CoreClusters")
