@@ -29,7 +29,7 @@ class Core:
 		The parent CoreCluster this Core is associated with.
 	"""
 	def __init__(self, mu=[0], sigma=[1], delta=[1], cluster=None):
-		self.dim = checkDimensionality(mu, sigma)
+		self.dim = check_dimensionality(mu, sigma)
 		self.mu = np.asarray(mu)
 		self.sigma = np.asarray(sigma)
 		self.delta = np.asarray(delta)
@@ -55,7 +55,7 @@ class Core:
 
 		Parameters
         ----------
-        data : array_like
+        data : array-like
             Quantiles, with the last axis of `data` denoting the features.
 
         Returns
@@ -63,8 +63,8 @@ class Core:
         pdf : ndarray or scalar
             Probability density function evaluated at `datas`
 		"""
-		data = formatArray(data)
-		checkDimensionality(data, self.mu, self.sigma)
+		data = format_arrays(data)
+		check_dimensionality(data, self.mu, self.sigma)
 		return mvn.pdf(x=data, mean=self.mu, cov=self.sigma)
 
 
