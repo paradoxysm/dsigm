@@ -69,7 +69,7 @@ class DESIGM:
 	inertia : float
 		Average of maximal probabilities of each sample to each Core.
 
-	cores_full : KDTree
+	cores_tree : KDTree
 		A KDTree representation of Cores.
 
 	cores : array-like, shape (n_cores,)
@@ -95,6 +95,6 @@ class DESIGM:
 		self.maxdec = maxdec
 		self.random_state = createRandomState(seed=random_state)
 		self.inertia = -np.inf
-		self.cores_full = KDTree()
+		self.cores_tree = KDTree()
 		self.cores = []
 		self.clusters = None
