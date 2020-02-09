@@ -6,7 +6,7 @@
 from scipy.stats import multivariate_normal as mvn
 import numpy as np
 
-from _utils import formatArray, checkDimensionality
+from ._utils import formatArray, checkDimensionality
 
 class Core:
 	"""
