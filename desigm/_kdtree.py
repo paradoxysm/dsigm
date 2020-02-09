@@ -125,7 +125,7 @@ class KDTree:
 			The KDTree node whose value matches the point.
 			None if the point was not found in the tree.
 		"""
-		if self.k != checkDimensionality(point):
+		if self.k != check_dimensionality(point):
 			raise ValueError("Point must be same dimensionality as the KDTree")
 		if self.value is None:
 			raise ValueError("KDTree is empty")
@@ -185,7 +185,7 @@ class KDTree:
 		distances : list or None, default=None
 			The list of distances corresponding to `neighbors`.
 		"""
-		if self.k != checkDimensionality(point):
+		if self.k != check_dimensionality(point):
 			raise ValueError("Point must be same dimensionality as the KDTree")
 		if self.value is None:
 			raise ValueError("KDTree is empty")
@@ -199,9 +199,9 @@ class KDTree:
 			distances = np.insert(distances, idx, dist)[:n]
 			neighbors = np.insert(neighbors, idx, self.value)[:n]
 		if point[self.axis] + distances[-1] >= self.value[self.axis]:
-			neighbors, distances = self.right.nearestNeighbor(point, n=n, neighbors=neighbors, distances=distances)
+			neighbors, distances = self.right.nearest_neighbor(point, n=n, neighbors=neighbors, distances=distances)
 		if point[self.axis] - distances[-1] < self.value[self.axis]:
-			neighbors, distances = self.left.nearestNeighbor(point, n=n, neighbors=neighbors, distances=distances)
+			neighbors, distances = self.left.nearest_neighbor(point, n=n, neighbors=neighbors, distances=distances)
 		return neighbours, distances
 
 	def proximal_neighbor(self, point, d=0, neighbors=None, distances=None):
@@ -231,7 +231,7 @@ class KDTree:
 		distances : list or None, default=None
 			The list of distances corresponding to `neighbors`.
 		"""
-		if self.k != checkDimensionality(point):
+		if self.k != check_dimensionality(point):
 			raise ValueError("Point must be same dimensionality as the KDTree")
 		if d == 0:
 			return neighbors, distances
@@ -247,7 +247,7 @@ class KDTree:
 			distances = np.insert(distances, idx, dist)
 			neighbors = np.insert(neighbors, idx, self.value)
 		if self.right and point[self.axis] + d >= self.value[self.axis]:
-			neighbors, distances = self.right.proximalNeighbor(point, d=d, neighbors=neighbors, distances=distances)
+			neighbors, distances = self.right.proximal_neighbor(point, d=d, neighbors=neighbors, distances=distances)
 		if self.left and point[self.axis] - d < self.value[self.axis]:
-			neighbors, distances = self.left.proximalNeighbor(point, d=d, neighbors=neighbors, distances=distances)
+			neighbors, distances = self.left.proximal_neighbor(point, d=d, neighbors=neighbors, distances=distances)
 		return neighbors, distances
