@@ -43,7 +43,7 @@ def create_random_state(seed=None):
 
 	Parameters
 	----------
-	seed : None or int or RandomState
+	seed : None, int, RandomState
 		Initial seed for the RandomState. If seed is None,
 		return the RandomState singleton. If seed is an int,
 		return a RandomState with the seed set to the int.
