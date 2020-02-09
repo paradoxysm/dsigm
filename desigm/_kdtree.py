@@ -45,7 +45,7 @@ class KDTree:
 		self.height = 0 if value is None else 1
 		self.nodes = 0 if value is None else 1
 
-	def printTree(self, depth=0):
+	def visualize(self, depth=0):
 		"""
 		Prints a visual representation of the KDTree.
 
@@ -56,11 +56,11 @@ class KDTree:
 		"""
 		print('\t' * depth + str(self.value.mu) + ", axis: " + str(self.axis))
 		if self.right:
-			self.right.printTree(depth=depth+1)
+			self.right.visualize(depth=depth+1)
 		else:
 			print('\t' * (depth+1) + "None")
 		if self.left:
-			self.left.printTree(depth=depth+1)
+			self.left.visualize(depth=depth+1)
 		else:
 			print('\t' * (depth+1) + "None")
 
