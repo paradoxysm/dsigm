@@ -5,6 +5,8 @@
 
 import numpy as np
 
+import _utils as utils
+
 class KDTree:
 	"""
 	A K-D Tree implemented as an AVL Tree.
@@ -168,7 +170,24 @@ class KDTree:
 		distances : list or None, default=None
 			The list of distances corresponding to `neighbors`.
 		"""
-		pass
+		if self.k != checkDimensionality(point):
+			raise ValueError("Point must be same dimensionality as the KDTree")
+		if self.value is None:
+			raise ValueError("KDCoreTree is empty")
+		if distances is None or neighbors is None:
+			distances = [np.inf] * n
+			neighbors = [None] * n
+		distances, neighbors = np.asarray(distances), np.asarray(neighbors)
+		dist = np.linalg.norm(point - self.value)
+		idx = distances.searchsorted(dist)
+		if idx < len(distances):
+			distances = np.insert(distances, idx, dist)[:n]
+			neighbors = np.insert(neighbors, idx, self.value)[:n]
+		if point[self.axis] + distances[-1] >= self.value[self.axis]:
+			neighbors, distances = self.right.nearestNeighbor(point, n=n, neighbors=neighbors, distances=distances)
+		if point[self.axis] - distances[-1] < self.value[self.axis]:
+			neighbors, distances = self.left.nearestNeighbor(point, n=n, neighbors=neighbors, distances=distances)
+		return neighbours, distances
 
 	def proximal_neighbor(self, point, d=0, neighbors=None, distances=None):
 		"""
@@ -197,4 +216,23 @@ class KDTree:
 		distances : list or None, default=None
 			The list of distances corresponding to `neighbors`.
 		"""
-		pass
+		if self.k != checkDimensionality(point):
+			raise ValueError("Point must be same dimensionality as the KDTree")
+		if d == 0:
+			return neighbors, distances
+		if self.value is None:
+			raise ValueError("KDCoreTree is empty")
+		if distances is None or neighbors is None:
+			distances = []
+			neighbors = []
+		distances, neighbors = np.asarray(distances), np.asarray(neighbors, dtype=Core)
+		dist = np.linalg.norm(point - self.value)
+		if dist <= d and point != self.value:
+			idx = distances.searchsorted(dist)
+			distances = np.insert(distances, idx, dist)
+			neighbors = np.insert(neighbors, idx, self.value)
+		if self.right and point[self.axis] + d >= self.value[self.axis]:
+			neighbors, distances = self.right.proximalNeighbor(point, d=d, neighbors=neighbors, distances=distances)
+		if self.left and point[self.axis] - d < self.value[self.axis]:
+			neighbors, distances = self.left.proximalNeighbor(point, d=d, neighbors=neighbors, distances=distances)
+		return neighbors, distances
