@@ -1,5 +1,5 @@
 from ._desigm import DESIGM
-from . import _utils
 from ._core import Core, CoreCluster
+from ._sgmm import SGMM
 
-__all__ = ['DESIGM', '_utils', 'Core', 'CoreCluster']
+__all__ = ['DESIGM', 'Core', 'CoreCluster', 'SGMM']
