@@ -7,12 +7,12 @@ import numpy as np
 
 import ._utils as utils
 
-class DESIGM:
+class DSIGM:
 	"""
-	A Clustering Model using the DESIGM Clustering Algorithm.
+	A Clustering Model using the DSIGM Clustering Algorithm.
 
-	DESIGM - Density-sensitive Evolution-based
-	Self-stabilization of Independent Gaussian Mixtures.
+	DSIGM - Density-sensitive Self-stabilization of
+	Independent Gaussian Mixtures.
 	Fits a self-stabilized number of Gaussian components
 	and groups them into clusters in a density sensitive manner.
 
@@ -28,12 +28,12 @@ class DESIGM:
 		Subsequently, it tracks the actual number of Cores.
 
 	n_init : int, default=10
-		Number of time the DESIGM algorithm will be run with different
+		Number of time the DSIGM algorithm will be run with different
         Core seeds. The final results will be the best output of
         n_init consecutive runs in terms of inertia.
 
 	max_iter : int, default=200
-		Maximum number of iterations of the DESIGM algorithm for a
+		Maximum number of iterations of the DSIGM algorithm for a
         single run.
 
 	ds : bool, default=True

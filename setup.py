@@ -21,8 +21,8 @@ setup(
     packages=find_packages(),
     install_requires=[
     	'scipy',
-	'sklearn',
-	'numpy'
+		'sklearn',
+		'numpy'
     ],
 	python_requires='>=3.4, <4',
 	classifiers=[
