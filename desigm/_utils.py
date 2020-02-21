@@ -3,37 +3,23 @@
 # Authors: Jeffrey Wang
 # License: BSD 3 clause
 
-def format_arrays(*args):
+def format_array(array):
 	"""
-	Format all arrays given into numpy ndarrays
-	such that the last axis denotes the features.
+	Format `array` into an ndarray where each row
+	corresponds to a single data point.
+	If `array` cannot be formatted in this manner, raise
+	a ValueError.
 
 	Parameters
 	----------
-	*args : tuple, default=()
-		Tuple of array-like objects to convert into ndarrays.
+	array : array-like, shape (n_samples, n_features)
+		List of `n_features`-dimensional data points.
 
 	Returns
 	-------
-	arrays : list
-		List of formatted ndarrays where the last axis denotes the features.
-	"""
-	pass
-
-def check_dimensionality(*args):
-	"""
-	Check that all arguments have the same dimensionality.
-	Return that dimensionality.
-
-	Parameters
-	----------
-	*args : tuple, default=()
-		Tuple of array-like objects or scalars to evaluate.
-
-	Returns
-	-------
-	dim : int
-		The dimensionality of all given arguments.
+	array : array-like, shape (n_samples, n_features)
+		List of `n_features`-dimensional data points.
+		Each row corresponds to a single data point.
 	"""
 	pass
 
