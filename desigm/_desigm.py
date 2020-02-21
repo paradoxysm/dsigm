@@ -44,26 +44,6 @@ class DESIGM:
 		Relative tolerance with regards to the difference in inertia
 		of two consecutive iterations to declare convergence.
 
-	vir : float, default=5e-3
-		Virulence factor for constructing new Cores. Points with probability
-		relative to a Core less than `vir` will construct a Core.
-
-	maxcons : int, default=1
-		Maximum number of Cores that can be constructing in a single
-		iteration of the DESIGM algorithm.
-
-	tolmu : float, default=1e-3
-		Relative tolerance with regards to the distance of two Cores
-		to determine if a Core should be deconstructed.
-
-	tolsig : float, default=5
-		Relative tolerance with regards to the angles between the
-		covariances of two Cores to determine if a Core should be deconstructed.
-
-	maxdec : int, default=3
-		Maximum number of Cores that can be deconstructed in a single
-		iteration of the DESIGM algorithm.
-
 	random_state : None or int or RandomState, default=None
 		Determines random number generation for Core initialization. Use
         an int to make the randomness deterministic.
@@ -73,9 +53,6 @@ class DESIGM:
 	inertia : float
 		Average of maximal probabilities of each sample to each Core.
 
-	cores_tree : KDTree
-		A KDTree representation of Cores.
-
 	cores : array-like, shape (n_cores,)
 		A list of Cores.
 
@@ -83,22 +60,18 @@ class DESIGM:
 		A graph of CoreClusters.
 	"""
 	def __init__(self, n_clusters=None, n_cores=10, n_init=10, max_iter=200, ds=True,
-					tol=1e-4, vir=5e-3, maxcons=1, tolmu=1e-3, tolsig=5, maxdec=3,
-					random_state=None):
-		self.dim = None
-		self.n_clusters = 0 if n_clusters is None else n_clusters
-		self.n_cores = n_cores
-		self.n_init = n_init
-		self.max_iter = max_iter
-		self.ds = ds
-		self.tol = tol
-		self.vir = vir
-		self.maxcons = maxcons
-		self.tolmu = tolmu
-		self.tolsig = tolsig
-		self.maxdec = maxdec
-		self.random_state = createRandomState(seed=random_state)
-		self.inertia = -np.inf
-		self.cores_tree = KDTree()
-		self.cores = []
-		self.clusters = None
+					tol=1e-4, random_state=None):
+		self.sgmm = SGMM(n_cores=n_cores, n_init=n_init, max_iter=max_iter,
+							tol=tol, random_state=random_state)
+
+	def fit(data, weights=None):
+		"""
+		Fit the model to `data`.
+		"""
+		pass
+
+	def predict(data, weights=None):
+		"""
+		Predict the clusters `data` belongs to.
+		"""
+		pass
