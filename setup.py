@@ -9,20 +9,20 @@ def read(*paths):
         return f.read()
 
 setup(
-	name='desigm',
+	name='dsigm',
 	version='0.3.0',
-    description='Density-sensitive Evolution-based Self-stabilization of Independent Gaussian Mixtures (DESIGM) Clustering',
+    description='Density-sensitive Self-stabilization of Independent Gaussian Mixtures (DSIGM) Clustering',
     long_description=(read('README.md') + '\n\n'),
-	url='http://github.com/paradoxysm/desigm',
-	download_url = 'https://github.com/paradoxysm/desigm/archive/0.3.0.tar.gz',
+	url='http://github.com/paradoxysm/dsigm',
+	download_url = 'https://github.com/paradoxysm/dsigm/archive/0.3.0.tar.gz',
     author='paradoxysm',
 	author_email='paradoxysm.dev@gmail.com',
     license='BSD-3-Clause',
     packages=find_packages(),
     install_requires=[
     	'scipy',
-		'sklearn',
-		'numpy'
+	'sklearn',
+	'numpy'
     ],
 	python_requires='>=3.4, <4',
 	classifiers=[
