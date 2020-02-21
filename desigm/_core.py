@@ -6,7 +6,7 @@
 from scipy.stats import multivariate_normal as mvn
 import numpy as np
 
-from ._utils import formatArray, checkDimensionality
+from ._utils import format_array
 
 class Core:
 	"""
@@ -28,11 +28,11 @@ class Core:
 	cluster : CoreCluster, default=None
 		The parent CoreCluster this Core is associated with.
 	"""
-	def __init__(self, mu=[0], sigma=[1], delta=[1], cluster=None):
-		self.dim = check_dimensionality(mu, sigma)
+	def __init__(self, mu=[0], sigma=[1], delta=1, cluster=None):
+		self.dim = -1
 		self.mu = np.asarray(mu)
 		self.sigma = np.asarray(sigma)
-		self.delta = np.asarray(delta)
+		self.delta = delta
 		self.cluster = cluster
 		self._validate_init()
 
@@ -48,6 +48,10 @@ class Core:
 			raise ValueError("Invalid argument provided for delta. Must be a vector")
 		if not isinstance(self.cluster, (None, CoreCluster)):
 			raise ValueError("Invalid argument provided for cluster. Must be None or CoreCluster. Found " + type(self.cluster).__name__)
+		if self.mu.shape[-1] == self.sigma.shape[-1]:
+			self.dim = self.mu.shape[-1]
+		else:
+			raise ValueError("Mismatch in dimensions between mu and sigma")
 
 	def pdf(self, data):
 		"""
@@ -63,8 +67,8 @@ class Core:
         pdf : ndarray or scalar
             Probability density function evaluated at `datas`
 		"""
-		data = format_arrays(data)
-		check_dimensionality(data, self.mu, self.sigma)
+		data = format_array(data)
+		self._validate_init()
 		return mvn.pdf(x=data, mean=self.mu, cov=self.sigma)
 
 
