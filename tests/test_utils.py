@@ -49,7 +49,7 @@ create_random_state
 
 def test_(seed, exp):
 	rs = create_random_state(seed)
-	assert np.all(rs[1] == exp[1])
+	assert np.all(rs.get_state()[1] == exp.get_state()[1])
 
 @pytest.mark.parametrize("seed", [
 	("b"),
