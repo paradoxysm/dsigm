@@ -25,7 +25,7 @@ def format_array(arr):
 		Each row corresponds to a single data point.
 	"""
 	arr = np.asarray(arr)
-	if arr.length > 1:
+	if len(arr) > 1:
 		arr = np.squeeze(arr)
 	if arr.ndim == 1:
 		arr = arr[:,np.newaxis]
