@@ -3,25 +3,30 @@
 # Authors: Jeffrey Wang
 # License: BSD 3 clause
 
-def format_array(array):
+def format_array(arr):
 	"""
-	Format `array` into an ndarray where each row
+	Format `arr` into an ndarray where each row
 	corresponds to a single data point.
-	If `array` cannot be formatted in this manner, raise
+	If `arr` cannot be formatted in this manner, raise
 	a ValueError.
 
 	Parameters
 	----------
-	array : array-like, shape (n_samples, n_features)
+	arr : array-like, shape (n_samples, n_features)
 		List of `n_features`-dimensional data points.
 
 	Returns
 	-------
-	array : array-like, shape (n_samples, n_features)
+	arr : array-like, shape (n_samples, n_features)
 		List of `n_features`-dimensional data points.
 		Each row corresponds to a single data point.
 	"""
-	pass
+	arr = np.asarray(arr)
+	if arr.ndim == 1:
+		arr = arr[:,np.newaxis]
+	elif arr.ndim != 2:
+		raise ValueError("Array needs to be a list of points, encountered some higher-dimensional array")
+	return arr
 
 def create_random_state(seed=None):
 	"""
