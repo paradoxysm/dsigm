@@ -8,15 +8,15 @@ import numpy as np
 def format_array(arr):
 	"""
 	Format `arr` into an ndarray where each row
-	corresponds to a single data point and all data
-	is formatted as a float.
-	If `arr` cannot be formatted in this manner, raise
-	a ValueError.
+	corresponds to a single data point with a
+	1D list of features.
+	All data is formatted as a float. If `arr` cannot
+	be formatted in this manner, raise a ValueError.
 
 	Parameters
 	----------
 	arr : array-like, shape (n_samples, n_features)
-		List of `n_features`-dimensional data points.
+		List of data points.
 
 	Returns
 	-------
@@ -25,16 +25,17 @@ def format_array(arr):
 		Each row corresponds to a single data point.
 	"""
 	arr = np.asarray(arr)
-	if len(arr) > 1:
-		arr = np.squeeze(arr)
-	if arr.ndim == 1:
-		arr = arr[:,np.newaxis]
-	elif arr.ndim != 2:
-		raise ValueError("Array needs to be a list of points, encountered some other dimensional array")
 	try:
 		arr = arr.astype(float)
 	except Exception as e:
 		raise
+	if arr.ndim == 1:
+		arr = arr[:,np.newaxis]
+	elif arr.ndim > 2:
+		arr = np.squeeze(arr)
+		if arr.size == 1:
+			arr = np.asarray([arr])
+		arr = format_array(arr)
 	return arr
 
 def create_random_state(seed=None):
