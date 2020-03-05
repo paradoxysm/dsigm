@@ -23,6 +23,10 @@ class SGMM:
 	init_cores : int, default=10
 		The initial number of Cores (Gaussian components) to fit the data.
 
+	stabilize : int or None, default=0.5
+		The adaption rate for stabilization of the number of Cores.
+		If None, stabilization is disabled.
+
 	n_init : int, default=10
 		Number of times the SGMM  will be run with different
         Core seeds. The final results will be the best output of
@@ -54,8 +58,11 @@ class SGMM:
 
 	cores : array-like, shape (n_cores,)
 		A list of Cores.
+
+	_data_range : array-like, shape (2, n_features)
+		The range that encompasses the data in each axis.
 	"""
-	def __init__(self, init_cores=10, stabilize=True, n_init=10, max_iter=200,
+	def __init__(self, init_cores=10, stabilize=0.5, n_init=10, max_iter=200,
 					tol=1e-4, random_state=None):
 		self.dim = -1
 		self.init_cores = n_cores
@@ -66,6 +73,7 @@ class SGMM:
 		self.random_state = create_random_state(seed=random_state)
 		self.inertia = -np.inf
 		self.cores = []
+		self._data_range = None
 
 	def fit(self, data):
 		"""
@@ -98,7 +106,8 @@ class SGMM:
 					self.converged = True
 					break
 				prev_bic, bic = bic, self.bic(data)
-				self._stabilize(bic, prev_bic)
+				if self.stabilize is not None:
+					self._stabilize(bic, prev_bic, p)
 			if inertia > best_inertia:
 				best_inertia, best_cores = inertia, cores
 		if not self.converged:
@@ -171,15 +180,30 @@ class SGMM:
 			List of Cores within the data space given by `data`.
 		"""
 		data = self._validate_data(data)
-		data_range = np.asarray([np.min(data, axis=0), np.max(data, axis=0)])
+		self._data_range = np.asarray([np.min(data, axis=0), np.max(data, axis=0)])
 		cores = []
 		for n in range(self.init_cores):
-			mu = self.random_state.rand(self.dim) * (data_range[1] - data_range[0]) + data_range[0]
-			sigma = make_spd_matrix(self.dim)
-			delta = np.ones((1)) / self.init_cores
-			cores_fast.append(Core(mu=mu, sigma=sigma, delta=delta))
+			core = self._initialize_core()
+			cores.append(core)
 		cores = np.asarray(cores)
 		return cores
+
+	def _initialize_core(self):
+		"""
+		Initialize a Core within the data space.
+
+		Returns
+		-------
+		core : Core
+			A Core within the data space given by `data`.
+		"""
+		if self._data_range is not None:
+			mu = self.random_state.rand(self.dim) * (self.data_range[1] - self.data_range[0]) + self.data_range[0]
+			sigma = make_spd_matrix(self.dim)
+			delta = np.ones((1)) / self.init_cores
+			return Core(mu=mu, sigma=sigma, delta=delta)
+		else:
+			raise RuntimeError("Data Range hasn't been set, likely because SGMM hasn't been initialized yet")
 
 	def _expectation(self, data):
 		"""
@@ -227,9 +251,14 @@ class SGMM:
 										(data - self.cores[c].mu)) / np.sum(b + 1e-8)
 			self.cores[c].delta = np.mean(b)
 
-	def _stabilize(self, bic, prev_bic):
+	def _stabilize(self, bic, prev_bic, p):
 		"""
 		Estimate the ideal number of Cores at the current step.
+		Change the cores in the model to fit this estimate.
+
+		New cores are seeded randomly within the data space.
+		Cores are removed based on their probability and overlap with
+		other Cores.
 
 		Parameters
 		----------
@@ -238,11 +267,23 @@ class SGMM:
 
 		prev_bic : float
 			Bayesian Information Criterion of the previous step.
+
+		p : array, shape (n_cores, n_samples)
+			Probabilities of samples under each Core.
 		"""
-		# Account for prev_bic = np.inf
-		# Amplify the strength so that it gets closer to minimum
-		# Decrease learning rate as it approaches minimum
-		pass
+		gradient = bic - prev_bic if prev_bic != np.inf else 10 * bic
+		step = round(gradient * self.stabilize)
+		if step > 0:
+			fitness = []
+			for i in range(len(p)):
+				f = np.sum((p[i] - np.sum(np.delete(p, i, axis=0), axis=0)).clip(min=0))
+				fitness.append(f, i)
+			fitness = sorted(fitness, key=lambda x: x[1])
+			for i in step:
+				np.delete(self.cores, fitness[i][1], axis=0)
+		elif step < 0:
+			for i in range(step):
+				self.cores.append(self._initialize_core)
 
 	def score(self, p):
 		"""
