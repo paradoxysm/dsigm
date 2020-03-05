@@ -5,7 +5,7 @@
 
 import numpy as np
 
-import ._utils as utils
+from ._utils import format_array, create_random_state
 
 class DSIGM:
 	"""
@@ -59,10 +59,12 @@ class DSIGM:
 	clusters : CoreCluster or None
 		A graph of CoreClusters.
 	"""
-	def __init__(self, n_clusters=None, n_cores=10, n_init=10, max_iter=200, ds=True,
-					tol=1e-4, random_state=None):
-		self.sgmm = SGMM(n_cores=n_cores, n_init=n_init, max_iter=max_iter,
+	def __init__(self, n_clusters=None, init_cores=10, stabilize=0.5, n_init=10,
+					max_iter=200, ds=True, tol=1e-4, random_state=None):
+		self.sgmm = SGMM(init_cores=n_cores, stabilize=stabilize,
+							n_init=n_init, max_iter=max_iter,
 							tol=tol, random_state=random_state)
+		self.dsg = DSG()
 
 	def fit(data, weights=None):
 		"""
