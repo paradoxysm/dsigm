@@ -3,6 +3,8 @@
 # Authors: Jeffrey Wang
 # License: BSD 3 clause
 
+import numpy as np
+
 def format_array(arr):
 	"""
 	Format `arr` into an ndarray where each row
