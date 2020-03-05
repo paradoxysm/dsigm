@@ -64,7 +64,6 @@ class DSIGM:
 		self.sgmm = SGMM(init_cores=n_cores, stabilize=stabilize,
 							n_init=n_init, max_iter=max_iter,
 							tol=tol, random_state=random_state)
-		self.dsg = DSG()
 
 	def fit(data, weights=None):
 		"""
