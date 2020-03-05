@@ -24,6 +24,9 @@ setup(
 		'sklearn',
 		'numpy'
     ],
+	extras_require={
+        'test': ['pytest', 'coverage', 'pytest-cov']
+    },
 	python_requires='>=3.4, <4',
 	classifiers=[
         'Development Status :: 3 - Alpha',
