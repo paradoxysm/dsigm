@@ -95,19 +95,7 @@ class SGMM:
 		data = self._validate_data(data)
 		best_inertia, best_cores = self.inertia, self.cores
 		for init in range(1, self.n_init + 1):
-			cores = self._initialize(data)
-			inertia, bic = -np.inf, np.inf
-			for iter in range(1, self.max_iter + 1):
-				prev_inertia = inertia
-				p = self._expectation(data)
-				self._maximization(data, p)
-				inertia = self.score(p)
-				if np.abs(inertia - prev_inertia) < self.tol:
-					self.converged = True
-					break
-				prev_bic, bic = bic, self.bic(data)
-				if self.stabilize is not None:
-					self._stabilize(bic, prev_bic, p)
+			inertia, cores = self._fit_single(data)
 			if inertia > best_inertia:
 				best_inertia, best_cores = inertia, cores
 		if not self.converged:
@@ -163,6 +151,43 @@ class SGMM:
 		elif self.dim != data.shape[-1]:
 			raise ValueError("Mismatch in dimensions between model and input data.")
 		return data
+
+	def _fit_single(self, data):
+		"""
+		A single attempt to estimate model parameters
+		with the EM algorithm.
+
+		The method iterates between E-step and M-step for
+		`max_iter` times until the change of likelihood or lower bound
+		is less than `tol`.
+
+		Parameters
+		----------
+		data : array-like, shape (n_samples, n_features)
+			List of `n_features`-dimensional data points.
+			Each row corresponds to a single data point.
+
+		Returns
+		-------
+		inertia : float
+			Log likelihood of the model.
+
+		cores : array-like, shape (n_cores,)
+			A list of Cores for this fit trial.
+		"""
+		cores = self._initialize(data)
+		inertia, bic = -np.inf, np.inf
+		for iter in range(1, self.max_iter + 1):
+			p = self._expectation(data)
+			self._maximization(data, p)
+			prev_inertia, inertia = inertia, self.score(p)
+			if np.abs(inertia - prev_inertia) < self.tol:
+				self.converged = True
+				break
+			prev_bic, bic = bic, self.bic(data)
+			if self.stabilize is not None:
+				self._stabilize(bic, prev_bic, p)
+		return inertia, cores
 
 	def _initialize(self, data):
 		"""
