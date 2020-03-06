@@ -14,6 +14,7 @@ This is a pre-release record of changes that will be implemented in `dsigm 0.3.0
 
 - ![Feature](https://img.shields.io/badge/-Feature-blueviolet) : `SGMM` implemented with fit and predict capacity.
 - ![Feature](https://img.shields.io/badge/-Feature-blueviolet) : `format_array` implemented in `_utils`.
+- ![Feature](https://img.shields.io/badge/-Feature-blueviolet) : `Core` and `CoreCluster` implemented.
 - ![Feature](https://img.shields.io/badge/-Feature-blueviolet) : `create_random_state` implemented in `_utils`.
 - ![Documentation](https://img.shields.io/badge/-Documentation-blue) : Documentation for functions in `_utils`.
 - ![Documentation](https://img.shields.io/badge/-Documentation-blue) : Documentation for `SGMM`.
