@@ -9,21 +9,33 @@ Test
 Core
 """
 
-def test_core_init():
-	Core()
-	Core(mu=[1])
-	Core(mu=[1,3], sigma=[2,4], delta=1)
-	Core(cluster=CoreCluster())
+@pytest.mark.parametrize("mu, sigma, delta, cluster, exp", [
+	([0],[1],1,None, Core()),
+	([1],[1],1,None, Core(mu=[1])),
+	([1,3],[2,4],1,None, Core(mu=[1,3],sigma=[2,4])),
+	([0],[1],1,CoreCluster(), Core(cluster=CoreCluster())),
+])
 
-def test_core_init_error():
+def test_core(mu, sigma, delta, cluster, exp):
+	core = Core(mu=mu, sigma=sigma, delta=delta, cluster=cluster)
+	assert core == exp
+
+def test_core_unequal():
+	assert Core() != 0
+
+@pytest.mark.parametrize("mu, sigma, delta, cluster", [
+	(1,[1],1,None),
+	([1],1,1,None),
+	([0],[1],1,0),
+	([1,3],[3],1,None),
+	(None,[1],1,None),
+	(object(),[1],1,None),
+	([0],[1],[3],None),
+])
+
+def test_core_error(mu, sigma, delta, cluster):
 	with pytest.raises(ValueError):
-		Core(mu=1)
-	with pytest.raises(ValueError):
-		Core(mu=[1,3], sigma=[3])
-	with pytest.raises(ValueError):
-		Core(mu=None)
-	with pytest.raises(ValueError):
-		Core(mu=object())
+		Core(mu=mu, sigma=sigma, delta=delta, cluster=cluster)
 
 def test_core_pdf():
 	core = Core()
@@ -37,18 +49,31 @@ Test
 CoreCluster
 """
 
-def test_core_init():
-	CoreCluster()
-	CoreCluster(cores=[Core(), Core()], children=[CoreCluster()])
+@pytest.mark.parametrize("cores, parents, children, exp", [
+	([],[],[], CoreCluster()),
+	([Core(),Core()],[CoreCluster(),CoreCluster()],[CoreCluster()],
+		CoreCluster(cores=[Core(),Core()], parents=[CoreCluster(),CoreCluster()],
+						children=[CoreCluster()])),
+])
 
-def test_core_init_error():
+def test_cluster(cores, parents, children, exp):
+	cluster = CoreCluster(cores=cores, parents=parents, children=children)
+	assert cluster == exp
+
+def test_cluster_unequal():
+	assert CoreCluster() != 0
+
+@pytest.mark.parametrize("cores, parents, children", [
+	(1,[],[]),
+	([1, Core()],[],[]),
+	([],1,1),
+	([],[],1),
+	([CoreCluster(), Core()],[],[]),
+	([],[],[Core()]),
+	([],[Core()],[]),
+	([],[],[CoreCluster(),1]),
+])
+
+def test_cluster_error(cores, parents, children):
 	with pytest.raises(ValueError):
-		CoreCluster(cores=1)
-	with pytest.raises(ValueError):
-		CoreCluster(cores=[1, Core()])
-	with pytest.raises(ValueError):
-		CoreCluster(cores=[CoreCluster(), Core()])
-	with pytest.raises(ValueError):
-		CoreCluster(children=[Core()])
-	with pytest.raises(ValueError):
-		CoreCluster(children=[CoreCluster(), 1])
+		CoreCluster(cores=cores, parents=parents, children=children)

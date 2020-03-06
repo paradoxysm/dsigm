@@ -36,6 +36,15 @@ class Core:
 		self.cluster = cluster
 		self._validate_init()
 
+	def __eq__(self, other):
+		if isinstance(other, Core):
+			mu = np.all(self.mu == other.mu)
+			sigma = np.all(self.sigma == other.sigma)
+			delta = np.all(self.delta == other.delta)
+			cluster = np.all(self.cluster == self.cluster)
+			return mu and sigma and delta and cluster
+		return False
+
 	def _validate_init(self):
 		"""
 		Validate the argument types for __init__
@@ -92,6 +101,14 @@ class CoreCluster:
 		self.parents = np.asarray(parents)
 		self.children = np.asarray(children)
 		self._validate_init()
+
+	def __eq__(self, other):
+		if isinstance(other, CoreCluster):
+			cores = np.all(self.cores == other.cores)
+			parents = np.all(self.parents == other.parents)
+			children = np.all(self.children == other.children)
+			return cores and parents and children
+		return False
 
 	def _validate_init(self):
 		"""
