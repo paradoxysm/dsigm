@@ -25,6 +25,8 @@ def test_format_array(arr, exp):
 	assert np.array_equal(arr, exp)
 
 @pytest.mark.parametrize("arr", [
+	([]),
+	(['d']),
 	(0),
 	([[3], [3,4]]),
 	([3, 'd']),
