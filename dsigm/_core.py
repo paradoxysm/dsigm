@@ -40,13 +40,13 @@ class Core:
 		"""
 		Validate the argument types for __init__
 		"""
-		if np.isscalar(self.mu):
+		if self.mu.ndim != 1:
 			raise ValueError("Invalid argument provided for mu. Must be a vector")
-		if np.isscalar(self.sigma):
+		if self.sigma.ndim != 1:
 			raise ValueError("Invalid argument provided for sigma. Must be a vector")
-		if np.isscalar(self.delta):
+		if not np.isscalar(self.delta):
 			raise ValueError("Invalid argument provided for delta. Must be a vector")
-		if not isinstance(self.cluster, (None, CoreCluster)):
+		if not isinstance(self.cluster, (type(None), CoreCluster)):
 			raise ValueError("Invalid argument provided for cluster. Must be None or CoreCluster. Found " + type(self.cluster).__name__)
 		if self.mu.shape[-1] == self.sigma.shape[-1]:
 			self.dim = self.mu.shape[-1]
@@ -89,7 +89,7 @@ class CoreCluster:
 	"""
 	def __init__(self, cores=[], parents=[], children=[]):
 		self.cores = np.asarray(cores)
-		self.parent = np.asarray(parents)
+		self.parents = np.asarray(parents)
 		self.children = np.asarray(children)
 		self._validate_init()
 
@@ -100,17 +100,17 @@ class CoreCluster:
 		if np.isscalar(self.cores):
 			raise ValueError("Invalid argument provided for cores. Must be a list of Cores")
 		core_types = set([type(item) for item in self.cores])
-		if len(core_types) != 1 or Core not in core_types:
+		if len(core_types) > 1 or (len(core_types) == 1 and Core not in core_types):
 			raise ValueError("Invalid argument provided for cores. Must be a list of Cores")
 
 		if np.isscalar(self.parents):
 			raise ValueError("Invalid argument provided for parents. Must be a list of CoreClusters")
 		parent_types = set([type(item) for item in self.parents])
-		if len(parent_types) != 1 or CoreCluster not in parent_types:
+		if len(parent_types) > 1 or (len(core_types) == 1 and Core not in parent_types):
 			raise ValueError("Invalid argument provided for parents. Must be a list of CoreClusters")
 
 		if np.isscalar(self.children):
 			raise ValueError("Invalid argument provided for children. Must be a list of CoreClusters")
 		children_types = set([type(item) for item in self.children])
-		if len(children_types) != 1 or CoreCluster not in children_types:
+		if len(children_types) > 1 or (len(core_types) == 1 and Core not in children_types):
 			raise ValueError("Invalid argument provided for children. Must be a list of CoreClusters")
