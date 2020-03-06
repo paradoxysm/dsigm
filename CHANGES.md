@@ -8,3 +8,13 @@
 - ![Fix](https://img.shields.io/badge/-Fix-red) : Something that previously didn’t work as documentated or as expected should now work.
 - ![Documentation](https://img.shields.io/badge/-Documentation-blue) : An update to the documentation.
 - ![Other](https://img.shields.io/badge/-Other-lightgrey) : Miscellaneous updates such as package structure or GitHub quality of life updates.
+
+### Version 0.3.0
+This is a pre-release record of changes that will be implemented in `dsigm 0.3.0`.
+
+- ![Feature](https://img.shields.io/badge/-Feature-blueviolet) : `SGMM` implemented with fit and predict capacity.
+- ![Feature](https://img.shields.io/badge/-Feature-blueviolet) : `format_array` implemented in `_utils`.
+- ![Feature](https://img.shields.io/badge/-Feature-blueviolet) : `create_random_state` implemented in `_utils`.
+- ![Documentation](https://img.shields.io/badge/-Documentation-blue) : Documentation for functions in `_utils`.
+- ![Documentation](https://img.shields.io/badge/-Documentation-blue) : Documentation for `SGMM`.
+- ![Other](https://img.shields.io/badge/-Other-lightgrey) : Package structure and repository established.
