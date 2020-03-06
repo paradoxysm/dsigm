@@ -97,20 +97,20 @@ class CoreCluster:
 		"""
 		Validate the argument types for __init__
 		"""
-		if np.isscalar(self.cores):
+		if self.cores.ndim != 1 or (self.cores.ndim == 0 and self.cores.size > 0):
 			raise ValueError("Invalid argument provided for cores. Must be a list of Cores")
 		core_types = set([type(item) for item in self.cores])
 		if len(core_types) > 1 or (len(core_types) == 1 and Core not in core_types):
 			raise ValueError("Invalid argument provided for cores. Must be a list of Cores")
 
-		if np.isscalar(self.parents):
+		if self.parents.ndim != 1 or (self.parents.ndim == 0 and self.parents.size > 0):
 			raise ValueError("Invalid argument provided for parents. Must be a list of CoreClusters")
 		parent_types = set([type(item) for item in self.parents])
-		if len(parent_types) > 1 or (len(core_types) == 1 and Core not in parent_types):
+		if len(parent_types) > 1 or (len(parent_types) == 1 and CoreCluster not in parent_types):
 			raise ValueError("Invalid argument provided for parents. Must be a list of CoreClusters")
 
-		if np.isscalar(self.children):
+		if self.children.ndim != 1 or (self.children.ndim == 0 and self.children.size > 0):
 			raise ValueError("Invalid argument provided for children. Must be a list of CoreClusters")
 		children_types = set([type(item) for item in self.children])
-		if len(children_types) > 1 or (len(core_types) == 1 and Core not in children_types):
+		if len(children_types) > 1 or (len(children_types) == 1 and CoreCluster not in children_types):
 			raise ValueError("Invalid argument provided for children. Must be a list of CoreClusters")

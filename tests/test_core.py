@@ -36,3 +36,19 @@ Test
 ----
 CoreCluster
 """
+
+def test_core_init():
+	CoreCluster()
+	CoreCluster(cores=[Core(), Core()], children=[CoreCluster()])
+
+def test_core_init_error():
+	with pytest.raises(ValueError):
+		CoreCluster(cores=1)
+	with pytest.raises(ValueError):
+		CoreCluster(cores=[1, Core()])
+	with pytest.raises(ValueError):
+		CoreCluster(cores=[CoreCluster(), Core()])
+	with pytest.raises(ValueError):
+		CoreCluster(children=[Core()])
+	with pytest.raises(ValueError):
+		CoreCluster(children=[CoreCluster(), 1])
