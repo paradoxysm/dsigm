@@ -38,3 +38,14 @@ def test_initialize_core_error():
 def test_initialize(data):
 	sgmm = SGMM()
 	sgmm._initialize(data)
+
+@pytest.mark.parametrize("data", [
+	([0,1,3,4,1,2]),
+	([[0,21,3],[2,4,3],[34,3,2]]),
+])
+
+def test_expectation(data):
+	sgmm = SGMM()
+	sgmm._initialize(data)
+	p = sgmm._expectation(data)
+	assert len(p) == len(sgmm.cores) and p.shape[-1] == len(data)

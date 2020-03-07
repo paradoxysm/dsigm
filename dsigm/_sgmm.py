@@ -177,19 +177,19 @@ class SGMM:
 		cores : array-like, shape (n_cores,)
 			A list of Cores for this fit trial.
 		"""
-		cores = self._initialize(data)
-		inertia, bic = -np.inf, np.inf
+		self._initialize(data)
+		self.inertia, bic = -np.inf, np.inf
 		for iter in range(1, self.max_iter + 1):
 			p = self._expectation(data)
 			self._maximization(data, p)
-			prev_inertia, inertia = inertia, self.score(p)
-			if np.abs(inertia - prev_inertia) < self.tol:
+			prev_inertia, self.inertia = self.inertia, self.score(p)
+			if np.abs(self.inertia - prev_inertia) < self.tol:
 				self.converged = True
 				break
 			prev_bic, bic = bic, self.bic(data)
 			if self.stabilize is not None:
 				self._stabilize(bic, prev_bic, p)
-		return inertia, cores
+		return self.inertia, self.cores
 
 	def _initialize(self, data):
 		"""
@@ -212,8 +212,8 @@ class SGMM:
 		for n in range(self.init_cores):
 			core = self._initialize_core()
 			cores.append(core)
-		cores = np.asarray(cores)
-		return cores
+		self.cores = np.asarray(cores)
+		return self.cores
 
 	def _initialize_core(self):
 		"""
