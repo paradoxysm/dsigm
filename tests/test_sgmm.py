@@ -49,3 +49,27 @@ def test_expectation(data):
 	sgmm._initialize(data)
 	p = sgmm._expectation(data)
 	assert len(p) == len(sgmm.cores) and p.shape[-1] == len(data)
+
+@pytest.mark.parametrize("data", [
+	([0,1,3,4,1,2]),
+	([[0,21,3],[2,4,3],[34,3,2]]),
+])
+
+def test_maximization(data):
+	sgmm = SGMM()
+	sgmm._initialize(data)
+	p = sgmm._expectation(data)
+	sgmm._maximization(data, p)
+
+@pytest.mark.parametrize("data, n_parameters", [
+	([0,1,3,4,1,2], 29),
+	([[0,21,3],[2,4,3],[34,3,2]], 99),
+])
+
+def test_score_bic_parameters(data, n_parameters):
+	sgmm = SGMM()
+	sgmm._initialize(data)
+	p = sgmm._expectation(data)
+	sgmm.score(p)
+	assert sgmm._n_parameters() == n_parameters
+	sgmm.bic(data)

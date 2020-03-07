@@ -328,7 +328,7 @@ class SGMM:
 		log_likelihood : float
 			Log likelihood of the model.
 		"""
-		return np.mean(np.sum(np.log(p), axis=0))
+		return np.mean(np.sum(np.log(p+1e-8), axis=0))
 
 	def bic(self, data):
 		"""
@@ -359,7 +359,7 @@ class SGMM:
 		n_parameters : int
 			The number of free parameters in the model.
 		"""
-		sigma_params = self.n_cores * self.dim * (self.dim + 1) / 2
-		mu_params = self.dim * self.n_cores
-		delta_params = self.n_cores
+		sigma_params = len(self.cores) * self.dim * (self.dim + 1) / 2
+		mu_params = self.dim * len(self.cores)
+		delta_params = len(self.cores)
 		return int(sigma_params + mu_params + delta_params - 1)
