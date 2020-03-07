@@ -8,7 +8,7 @@ import warnings
 from sklearn.datasets import make_spd_matrix
 
 from ._utils import format_array, create_random_state
-from ._exceptions import ConvergenceWarning
+from ._exceptions import ConvergenceWarning, InitializationWarning
 from . import Core
 
 class SGMM:
@@ -124,9 +124,12 @@ class SGMM:
 		labels : array, shape (n_samples,)
 			Component labels.
 		"""
-		data = self._validate_data(data)
-		estimates = np.asarray(self._expectation(data)).T
-		return estimates.argmax(axis=-1)
+		if len(self.cores) == 0:
+			warnings.warn('Model not initialized so prediction ignored.', InitializationWarning)
+		else:
+			data = self._validate_data(data)
+			estimates = np.asarray(self._expectation(data)).T
+			return estimates.argmax(axis=-1)
 
 	def _validate_data(self, data):
 		"""
