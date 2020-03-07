@@ -74,14 +74,23 @@ def test_score_bic_parameters(data, n_parameters):
 	assert sgmm._n_parameters() == n_parameters
 	sgmm.bic(data)
 
-@pytest.mark.parametrize("data, bic, prev_bic, n_cores", [
-	([0,1,3,4,1,2], 0.5, 5, 12),
-	([[0,21,3],[2,4,3],[34,3,2]], 5, 0.5, 8),
+@pytest.mark.parametrize("data, n_cores", [
+	([0,1,3,4,1,2], 7),
+	([[0,21,3],[2,4,3],[34,3,2]], 2),
 ])
 
-def test_stabilize(data, bic, prev_bic, n_cores):
+def test_stabilize(data, n_cores):
 	sgmm = SGMM()
 	sgmm._initialize(data)
-	p = sgmm._expectation(data)
-	sgmm._stabilize(bic, prev_bic, p)
+	sgmm._stabilize(data)
 	assert len(sgmm.cores) == n_cores
+
+@pytest.mark.parametrize("data", [
+	([0,1,3,4,1,2]),
+	([[0,21,3],[2,4,3],[34,3,2],[0,1,3],[0,3,1]]),
+])
+
+def test_fit_single(data):
+	sgmm = SGMM(init_cores=1, stabilize=None)
+	sgmm._initialize(data)
+	sgmm._fit_single(data)
