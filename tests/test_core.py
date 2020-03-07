@@ -10,10 +10,10 @@ Core
 """
 
 @pytest.mark.parametrize("mu, sigma, delta, cluster, exp", [
-	([0],[1],1,None, Core()),
-	([1],[1],1,None, Core(mu=[1])),
-	([1,3],[2,4],1,None, Core(mu=[1,3],sigma=[2,4])),
-	([0],[1],1,CoreCluster(), Core(cluster=CoreCluster())),
+	([0],[1],[1],None, Core()),
+	([1],[1],[1],None, Core(mu=[1])),
+	([1,3],[[2,4],[0,3]],[1],None, Core(mu=[1,3],sigma=[[2,4],[0,3]])),
+	([0],[1],[1],CoreCluster(), Core(cluster=CoreCluster())),
 ])
 
 def test_core(mu, sigma, delta, cluster, exp):
@@ -24,13 +24,13 @@ def test_core_unequal():
 	assert Core() != 0
 
 @pytest.mark.parametrize("mu, sigma, delta, cluster", [
-	(1,[1],1,None),
-	([1],1,1,None),
+	(1,[1],[1],None),
+	([1],1,[1],None),
 	([0],[1],1,0),
-	([1,3],[3],1,None),
-	(None,[1],1,None),
-	(object(),[1],1,None),
-	([0],[1],[3],None),
+	([1,3],[3],[1],None),
+	(None,[1],[1],None),
+	(object(),[1],[1],None),
+	([0],[1],3,None),
 ])
 
 def test_core_error(mu, sigma, delta, cluster):

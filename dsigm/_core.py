@@ -28,11 +28,11 @@ class Core:
 	cluster : CoreCluster, default=None
 		The parent CoreCluster this Core is associated with.
 	"""
-	def __init__(self, mu=[0], sigma=[1], delta=1, cluster=None):
+	def __init__(self, mu=[0], sigma=[1], delta=[1], cluster=None):
 		self.dim = -1
 		self.mu = np.asarray(mu)
 		self.sigma = np.asarray(sigma)
-		self.delta = delta
+		self.delta = np.asarray(delta)
 		self.cluster = cluster
 		self._validate_init()
 
@@ -51,9 +51,10 @@ class Core:
 		"""
 		if self.mu.ndim != 1:
 			raise ValueError("Invalid argument provided for mu. Must be a vector")
-		if self.sigma.ndim != 1:
+		if not (self.sigma.ndim == 1 and len(self.sigma) == 1 or \
+				self.sigma.ndim == 2 and len(self.sigma) == self.sigma.shape[-1]):
 			raise ValueError("Invalid argument provided for sigma. Must be a vector")
-		if not np.isscalar(self.delta):
+		if self.delta.ndim != 1 or self.delta.size != 1:
 			raise ValueError("Invalid argument provided for delta. Must be a vector")
 		if not isinstance(self.cluster, (type(None), CoreCluster)):
 			raise ValueError("Invalid argument provided for cluster. Must be None or CoreCluster. Found " + type(self.cluster).__name__)
