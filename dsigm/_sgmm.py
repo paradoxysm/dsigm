@@ -25,7 +25,7 @@ class SGMM:
 	init_cores : int, default=10
 		The initial number of Cores (Gaussian components) to fit the data.
 
-	stabilize : int or None, default=0.5
+	stabilize : int or None, default=0.05
 		The adaption rate for stabilization of the number of Cores.
 		If None, stabilization is disabled.
 
@@ -64,7 +64,7 @@ class SGMM:
 	_data_range : array-like, shape (2, n_features)
 		The range that encompasses the data in each axis.
 	"""
-	def __init__(self, init_cores=10, stabilize=0.5, n_init=10, max_iter=200,
+	def __init__(self, init_cores=10, stabilize=0.05, n_init=10, max_iter=200,
 					tol=1e-4, random_state=None):
 		self.dim = -1
 		self.init_cores = init_cores
@@ -312,6 +312,7 @@ class SGMM:
 				f = np.sum((p[i] - np.sum(np.delete(p, i, axis=0), axis=0)).clip(min=0))
 				fitness.append((f, i))
 			fitness = np.asarray(sorted(fitness, key=lambda x: x[1]))
+			step = step if step < len(self.cores) else 0
 			mask = fitness[:int(step), 1].astype(int)
 			if len(mask) > 0:
 				self.cores = np.delete(self.cores, mask, axis=0)
