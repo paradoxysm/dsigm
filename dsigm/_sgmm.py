@@ -65,7 +65,7 @@ class SGMM:
 	def __init__(self, init_cores=10, stabilize=0.5, n_init=10, max_iter=200,
 					tol=1e-4, random_state=None):
 		self.dim = -1
-		self.init_cores = n_cores
+		self.init_cores = init_cores
 		self.stabilize = stabilize
 		self.n_init = n_init
 		self.max_iter = max_iter
