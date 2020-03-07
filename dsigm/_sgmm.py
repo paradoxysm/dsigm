@@ -309,7 +309,7 @@ class SGMM:
 				fitness.append((f, i))
 			fitness = sorted(fitness, key=lambda x: x[1])
 			for i in range(step):
-				np.delete(self.cores, fitness[i][1], axis=0)
+				self.cores = np.delete(self.cores, fitness[i][1], axis=0)
 		elif step < 0:
 			for i in range(np.abs(step)):
 				self.cores = np.concatenate((self.cores, [self._initialize_core()]))
