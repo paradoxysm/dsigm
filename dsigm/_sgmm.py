@@ -5,9 +5,11 @@
 
 import numpy as np
 import warnings
+from sklearn.datasets import make_spd_matrix
 
 from ._utils import format_array, create_random_state
 from ._exceptions import ConvergenceWarning
+from . import Core
 
 class SGMM:
 	"""
@@ -223,7 +225,9 @@ class SGMM:
 			A Core within the data space given by `data`.
 		"""
 		if self._data_range is not None:
-			mu = self.random_state.rand(self.dim) * (self.data_range[1] - self.data_range[0]) + self.data_range[0]
+			mu = self.random_state.rand(self.dim) * \
+					(self._data_range[1] - self._data_range[0]) + \
+					self._data_range[0]
 			sigma = make_spd_matrix(self.dim)
 			delta = np.ones((1)) / self.init_cores
 			return Core(mu=mu, sigma=sigma, delta=delta)

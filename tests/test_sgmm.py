@@ -24,3 +24,17 @@ def test_validate_data(data, exp, dim_exp):
 	sgmm = SGMM()
 	assert np.all(sgmm._validate_data(data) == exp)
 	assert sgmm.dim == dim_exp
+
+def test_initialize_core_error():
+	sgmm = SGMM()
+	with pytest.raises(RuntimeError):
+		sgmm._initialize_core()
+
+@pytest.mark.parametrize("data", [
+	([0,1,3,4,1,2]),
+	([[0,21,3],[2,4,3],[34,3,2]]),
+])
+
+def test_initialize(data):
+	sgmm = SGMM()
+	sgmm._initialize(data)
