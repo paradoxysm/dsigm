@@ -178,7 +178,7 @@ class SGMM:
 			A list of Cores for this fit trial.
 		"""
 		self._initialize(data)
-		self.inertia, bic = -np.inf, np.inf
+		self.inertia = -np.inf
 		for iter in range(1, self.max_iter + 1):
 			p = self._expectation(data)
 			self._maximization(data, p)
@@ -186,9 +186,8 @@ class SGMM:
 			if np.abs(self.inertia - prev_inertia) < self.tol:
 				self.converged = True
 				break
-			prev_bic, bic = bic, self.bic(data)
 			if self.stabilize is not None:
-				self._stabilize(bic, prev_bic, p)
+				self._stabilize(data)
 		return self.inertia, self.cores
 
 	def _initialize(self, data):
@@ -229,7 +228,10 @@ class SGMM:
 					(self._data_range[1] - self._data_range[0]) + \
 					self._data_range[0]
 			sigma = make_spd_matrix(self.dim)
-			delta = np.ones((1)) / self.init_cores
+			if len(self.cores):
+				delta = np.ones((1)) / len(self.cores)
+			else:
+				delta = np.ones((1)) / self.init_cores
 			return Core(mu=mu, sigma=sigma, delta=delta)
 		else:
 			raise RuntimeError("Data Range hasn't been set, likely because SGMM hasn't been initialized yet")
@@ -249,9 +251,9 @@ class SGMM:
 		p : array, shape (n_cores, n_samples)
 			Probabilities of samples under each Core.
 		"""
+		data = self._validate_data(data)
 		p = []
 		for core in self.cores:
-			m, s = core.mu, core.sigma
 			p.append(core.pdf(data))
 		p = np.asarray(p)
 		if p.shape != (len(self.cores), len(data)):
@@ -271,16 +273,19 @@ class SGMM:
 		prob : array, shape (n_cores, n_samples)
 			Probabilities of samples under each Core.
 		"""
-		for p, c in zip(range(len(prob)), range(len(self.cores))):
-			b_num = prob[p] * self.cores[c].delta
-			b_denom = np.sum([prob[i] * self.cores[i].delta for i in range(len(self.cores))], axis=0) + 1e-8
-			b = b_num / b_denom
-			self.cores[c].mu = np.sum(b.reshape(len(data), 1) * data, axis=0) / np.sum(b + 1e-8)
-			self.cores[c].sigma = np.dot((b.reshape(len(data), 1) * (data - self.cores[c].mu)).T,
-										(data - self.cores[c].mu)) / np.sum(b + 1e-8)
-			self.cores[c].delta = np.mean(b)
+		data = self._validate_data(data)
+		delta_cores = [self.cores[i].delta for i in range(len(self.cores))]
+		b_vector = prob * delta_cores
+		b = b_vector / (np.sum(b_vector, axis=0) + 1e-8)
+		for i in range(len(self.cores)):
+			mu = np.sum(b[i].reshape(len(data), 1) * data, axis=0) / np.sum(b[i] + 1e-8)
+			sigma = np.dot((b[i].reshape(len(data), 1) * (data - mu)).T,
+										(data - mu)) / np.sum(b[i] + 1e-8)
+			np.fill_diagonal(sigma, sigma.diagonal() + 1e-6)
+			delta = [np.mean(b[i])]
+			self.cores[i] = Core(mu=mu, sigma=sigma, delta=delta)
 
-	def _stabilize(self, bic, prev_bic, p):
+	def _stabilize(self, data):
 		"""
 		Estimate the ideal number of Cores at the current step.
 		Change the cores in the model to fit this estimate.
@@ -291,27 +296,27 @@ class SGMM:
 
 		Parameters
 		----------
-		bic : float
-			Bayesian Information Criterion of the current step.
-
-		prev_bic : float
-			Bayesian Information Criterion of the previous step.
+		data : array-like, shape (n_samples, n_features)
+			List of `n_features`-dimensional data points.
+			Each row corresponds to a single data point.
 
 		p : array, shape (n_cores, n_samples)
 			Probabilities of samples under each Core.
 		"""
-		gradient = bic - prev_bic if prev_bic != np.inf else 10 * bic
+		p = self._expectation(data)
+		gradient = self.bic_gradient(data, p)
 		step = round(gradient * self.stabilize)
 		if step > 0:
 			fitness = []
 			for i in range(len(p)):
 				f = np.sum((p[i] - np.sum(np.delete(p, i, axis=0), axis=0)).clip(min=0))
 				fitness.append((f, i))
-			fitness = sorted(fitness, key=lambda x: x[1])
-			for i in range(step):
-				self.cores = np.delete(self.cores, fitness[i][1], axis=0)
+			fitness = np.asarray(sorted(fitness, key=lambda x: x[1]))
+			mask = fitness[:int(step), 1].astype(int)
+			if len(mask) > 0:
+				self.cores = np.delete(self.cores, mask, axis=0)
 		elif step < 0:
-			for i in range(np.abs(step)):
+			for i in range(np.abs(int(step))):
 				self.cores = np.concatenate((self.cores, [self._initialize_core()]))
 
 	def score(self, p):
@@ -349,6 +354,34 @@ class SGMM:
 		fit = -2 * self.score(self._expectation(data)) * len(data)
 		penalty = self._n_parameters() * np.log(len(data))
 		return fit + penalty
+
+	def bic_gradient(self, data, p):
+		"""
+		Return an approximate gradient of the Bayesian Information
+		Criterion for the current model on the input `data`.
+
+		Parameters
+		----------
+		data : array-like, shape (n_samples, n_features)
+			List of `n_features`-dimensional data points.
+			Each row corresponds to a single data point.
+
+		p : array-like, shape (n_cores, n_samples)
+			Probabilities of samples under each Core.
+
+		Returns
+		-------
+		gradient : float
+			Estimated gradient of the curve. Positive gradients
+			imply excess Cores, while negative gradients imply
+			lack of Cores.
+		"""
+		score = np.exp(self.score(p))
+		fit_coeff = (len(self.cores) * (1 - score)) / score
+		fit_gradient = -2 * (90 / (len(self.cores) * (len(self.cores) + fit_coeff))) * len(data)
+		penalty_gradient = (np.square(self.dim) + 1.5 * self.dim + 1) * np.log(len(data))
+		gradient = fit_gradient + penalty_gradient
+		return gradient
 
 	def _n_parameters(self):
 		"""
