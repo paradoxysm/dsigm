@@ -31,6 +31,7 @@ def test_core_unequal():
 	(None,[1],[1],None),
 	(object(),[1],[1],None),
 	([0],[1],3,None),
+	([0],[1],[1],object())
 ])
 
 def test_core_error(mu, sigma, delta, cluster):
