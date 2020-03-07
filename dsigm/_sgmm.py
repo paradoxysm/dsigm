@@ -306,13 +306,13 @@ class SGMM:
 			fitness = []
 			for i in range(len(p)):
 				f = np.sum((p[i] - np.sum(np.delete(p, i, axis=0), axis=0)).clip(min=0))
-				fitness.append(f, i)
+				fitness.append((f, i))
 			fitness = sorted(fitness, key=lambda x: x[1])
-			for i in step:
+			for i in range(step):
 				np.delete(self.cores, fitness[i][1], axis=0)
 		elif step < 0:
-			for i in range(step):
-				self.cores.append(self._initialize_core)
+			for i in range(np.abs(step)):
+				self.cores = np.concatenate((self.cores, [self._initialize_core()]))
 
 	def score(self, p):
 		"""
