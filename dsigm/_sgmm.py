@@ -386,7 +386,7 @@ class SGMM:
 			lack of Cores.
 		"""
 		score = np.exp(self.score(p))
-		fit_coeff = (len(self.cores) * (1 - score)) / score
+		fit_coeff = (len(self.cores) * (1 - score)) / (score + 1e-8)
 		fit_gradient = -2 * (90 / (len(self.cores) * (len(self.cores) + fit_coeff))) * len(data)
 		penalty_gradient = (np.square(self.dim) + 1.5 * self.dim + 1) * np.log(len(data))
 		gradient = fit_gradient + penalty_gradient
