@@ -22,7 +22,7 @@ class SGMM:
 
 	Parameters
 	----------
-	init_cores : int, default=10
+	init_cores : int, default=5
 		The initial number of Cores (Gaussian components) to fit the data.
 
 	stabilize : int or None, default=0.05
@@ -38,9 +38,13 @@ class SGMM:
 		Maximum number of iterations of the SGMM for a
         single run.
 
-	tol : float, default=1e-4
+	tol : float, default=1e-3
 		Relative tolerance with regards to the difference in inertia
 		of two consecutive iterations to declare convergence.
+
+	reg_covar : float, default=1e-6
+		Non-negative regularization added to the diagonal of covariance.
+		Allows to assure that the covariance matrices are all positive.
 
 	random_state : None or int or RandomState, default=None
 		Determines random number generation for Core initialization. Use
@@ -64,14 +68,15 @@ class SGMM:
 	_data_range : array-like, shape (2, n_features)
 		The range that encompasses the data in each axis.
 	"""
-	def __init__(self, init_cores=10, stabilize=0.05, n_init=10, max_iter=200,
-					tol=1e-4, random_state=None):
+	def __init__(self, init_cores=5, stabilize=0.05, n_init=10, max_iter=200,
+					tol=1e-3, reg_covar=1e-6, random_state=None):
 		self.dim = -1
 		self.init_cores = init_cores
 		self.stabilize = stabilize
 		self.n_init = n_init
 		self.max_iter = max_iter
 		self.tol = tol
+		self.reg_covar = reg_covar
 		self.random_state = create_random_state(seed=random_state)
 		self.inertia = -np.inf
 		self.cores = []
@@ -284,7 +289,7 @@ class SGMM:
 			mu = np.sum(b[i].reshape(len(data), 1) * data, axis=0) / np.sum(b[i] + 1e-8)
 			sigma = np.dot((b[i].reshape(len(data), 1) * (data - mu)).T,
 										(data - mu)) / np.sum(b[i] + 1e-8)
-			np.fill_diagonal(sigma, sigma.diagonal() + 1e-6)
+			np.fill_diagonal(sigma, sigma.diagonal() + self.reg_covar)
 			delta = [np.mean(b[i])]
 			self.cores[i] = Core(mu=mu, sigma=sigma, delta=delta)
 
