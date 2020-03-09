@@ -222,16 +222,29 @@ class SGMM:
 		self.cores = np.asarray(cores)
 		return self.cores
 
-	def _initialize_core(self):
+	def _initialize_core(self, mu=None, sigma=None, delta=None):
 		"""
 		Initialize a Core within the data space.
+
+		Parameters
+		----------
+		mu : array-like, shape (n_features,), default=None
+			Mean of the Core.
+
+		sigma : array-like, shape (n_features, n_features), default=None
+			Covariance of the Core.
+
+		delta : array-like, shape (n_features,), default=None
+			Weight of the Core.
 
 		Returns
 		-------
 		core : Core
 			A Core within the data space given by `data`.
 		"""
-		if self._data_range is not None:
+		if mu and sigma and delta:
+			return Core(mu=mu, sigma=sigma, delta=delta)
+		elif self._data_range is not None:
 			mu = self.random_state.rand(self.dim) * \
 					(self._data_range[1] - self._data_range[0]) + \
 					self._data_range[0]
@@ -313,6 +326,11 @@ class SGMM:
 		"""
 		p = self._expectation(data)
 		gradient = self.bic_gradient(data, p)
+		# DOESN'T CONVERGE WELL
+		'''
+			Using pre maximization p and post maximization p
+			???
+		'''
 		step = round(gradient * self.stabilize)
 		if step > 0:
 			fitness = []
