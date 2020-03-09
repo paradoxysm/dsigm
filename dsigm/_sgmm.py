@@ -6,6 +6,7 @@
 import numpy as np
 import warnings
 from sklearn.datasets import make_spd_matrix
+from sklearn.cluster import KMeans
 
 from ._utils import format_array, create_random_state
 from ._exceptions import ConvergenceWarning, InitializationWarning
@@ -24,6 +25,13 @@ class SGMM:
 	----------
 	init_cores : int, default=5
 		The initial number of Cores (Gaussian components) to fit the data.
+
+	init : {'random', 'kmeans'}, default='kmeans'
+		The method used to initialize the weights, the means and the
+        precisions.
+        Must be one of::
+            'kmeans' : responsibilities are initialized using kmeans.
+            'random' : responsibilities are initialized randomly.
 
 	stabilize : int or None, default=0.05
 		The adaption rate for stabilization of the number of Cores.
@@ -68,10 +76,11 @@ class SGMM:
 	_data_range : array-like, shape (2, n_features)
 		The range that encompasses the data in each axis.
 	"""
-	def __init__(self, init_cores=5, stabilize=0.05, n_init=10, max_iter=200,
+	def __init__(self, init_cores=5, init='kmeans', stabilize=0.05, n_init=10, max_iter=200,
 					tol=1e-3, reg_covar=1e-6, random_state=None):
 		self.dim = -1
 		self.init_cores = init_cores
+		self.init = init
 		self.stabilize = stabilize
 		self.n_init = n_init
 		self.max_iter = max_iter
@@ -216,11 +225,48 @@ class SGMM:
 		data = self._validate_data(data)
 		self._data_range = np.asarray([np.min(data, axis=0), np.max(data, axis=0)])
 		cores = []
+		params = _estimate_parameters(data)
 		for n in range(self.init_cores):
-			core = self._initialize_core()
+			mu, sigma, delta = params['mu'][n], params['sigma'][n], params['delta'][n]
+			core = self._initialize_core(mu=mu, sigma=sigma, delta=delta)
 			cores.append(core)
 		self.cores = np.asarray(cores)
 		return self.cores
+
+	def _estimate_parameters(self, data):
+		"""
+		Initialize model parameters.
+
+		Parameters
+		----------
+		data : array-like, shape (n_samples, n_features)
+			List of `n_features`-dimensional data points.
+			Each row corresponds to a single data point.
+
+		Returns
+		-------
+		params : dict
+			Initial parameters for the model.
+		"""
+		if self.init == 'kmeans':
+			resp = np.zeros((len(data), self.n_cores))
+			label = KMeans(n_clusters=self.init_cores, n_init=1,
+							random_state=self.random_state).fit(X).labels_
+			resp[np.arange(len(data)), label] = 1
+			delta = np.sum(resp, axis=0) + 10 * np.finfo(resp.dtype).eps
+			mu = np.dot(resp.T, data) / delta[:,np.newaxis]
+			sigma = np.empty((n_components, n_features, n_features))
+			for k in range(self.init_cores):
+				diff = data - mu[k]
+				sigma[k] = np.dot(resp[:, k] * diff.T, diff) / delta[k]
+				sigma[k].flat[::self.dim + 1] += self.reg_covar
+			delta /= len(data)
+			return {'mu'=mu, 'sigma'=sigma, 'delta'=delta}
+		elif self.init == 'random':
+			return {'mu'=None, 'sigma'=None, 'delta'=delta}
+		else:
+			raise ValueError("Unimplemented initialization method '%s'"
+                             % self.init_params)
 
 	def _initialize_core(self, mu=None, sigma=None, delta=None):
 		"""
