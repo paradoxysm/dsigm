@@ -12,7 +12,7 @@ Core
 @pytest.mark.parametrize("mu, sigma, delta, cluster, exp", [
 	([0],[1],[1],None, Core()),
 	([1],[1],[1],None, Core(mu=[1])),
-	([1,3],[[2,4],[0,3]],[1],None, Core(mu=[1,3],sigma=[[2,4],[0,3]])),
+	([1,3],[[2,4],[0,3]],[1,3],None, Core(mu=[1,3],sigma=[[2,4],[0,3]],delta=[1,3])),
 	([0],[1],[1],CoreCluster(), Core(cluster=CoreCluster())),
 ])
 

@@ -54,7 +54,7 @@ class Core:
 		if not (self.sigma.ndim == 1 and len(self.sigma) == 1 or \
 				self.sigma.ndim == 2 and len(self.sigma) == self.sigma.shape[-1]):
 			raise ValueError("Invalid argument provided for sigma. Must be a vector")
-		if self.delta.ndim != 1 or self.delta.size != 1:
+		if self.delta.ndim != 1:
 			raise ValueError("Invalid argument provided for delta. Must be a vector")
 		if not isinstance(self.cluster, (type(None), CoreCluster)):
 			raise ValueError("Invalid argument provided for cluster. Must be None or CoreCluster. Found " + type(self.cluster).__name__)
