@@ -453,7 +453,7 @@ class SGMM:
 		return fit + penalty
 
 	def aic(self, X):
-        """
+		"""
 		Akaike Information Criterion for the current model
 		on the input `data`.
 
@@ -467,7 +467,7 @@ class SGMM:
         aic : float
 			Akaike Information Criterion. The lower the better.
         """
-        fit = -2 * self.score(self._expectation(data)) * len(data)
+		fit = -2 * self.score(self._expectation(data)) * len(data)
 		penalty = 2 * self._n_parameters()
 		return fit + penalty
 
