@@ -90,6 +90,7 @@ class SGMM:
 		self.inertia = -np.inf
 		self.cores = []
 		self._data_range = None
+		self.converged = False
 
 	def get_params(self):
 		"""
