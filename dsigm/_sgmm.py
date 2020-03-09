@@ -225,7 +225,7 @@ class SGMM:
 		data = self._validate_data(data)
 		self._data_range = np.asarray([np.min(data, axis=0), np.max(data, axis=0)])
 		cores = []
-		params = _estimate_parameters(data)
+		params = self._estimate_parameters(data)
 		for n in range(self.init_cores):
 			mu, sigma, delta = params['mu'][n], params['sigma'][n], params['delta'][n]
 			core = self._initialize_core(mu=mu, sigma=sigma, delta=delta)
@@ -249,24 +249,25 @@ class SGMM:
 			Initial parameters for the model.
 		"""
 		if self.init == 'kmeans':
-			resp = np.zeros((len(data), self.n_cores))
+			resp = np.zeros((len(data), self.init_cores))
 			label = KMeans(n_clusters=self.init_cores, n_init=1,
-							random_state=self.random_state).fit(X).labels_
+							random_state=self.random_state).fit(data).labels_
 			resp[np.arange(len(data)), label] = 1
 			delta = np.sum(resp, axis=0) + 10 * np.finfo(resp.dtype).eps
 			mu = np.dot(resp.T, data) / delta[:,np.newaxis]
-			sigma = np.empty((n_components, n_features, n_features))
+			sigma = np.empty((self.init_cores, self.dim, self.dim))
 			for k in range(self.init_cores):
 				diff = data - mu[k]
 				sigma[k] = np.dot(resp[:, k] * diff.T, diff) / delta[k]
 				sigma[k].flat[::self.dim + 1] += self.reg_covar
-			delta /= len(data)
-			return {'mu'=mu, 'sigma'=sigma, 'delta'=delta}
+			delta = (delta / len(data))[:,np.newaxis]
+			return {'mu':mu, 'sigma':sigma, 'delta':delta}
 		elif self.init == 'random':
-			return {'mu'=None, 'sigma'=None, 'delta'=delta}
+			none = np.full((self.init_cores,), None)
+			return {'mu':none, 'sigma':none, 'delta':none}
 		else:
 			raise ValueError("Unimplemented initialization method '%s'"
-                             % self.init_params)
+                             % self.init)
 
 	def _initialize_core(self, mu=None, sigma=None, delta=None):
 		"""
@@ -288,7 +289,7 @@ class SGMM:
 		core : Core
 			A Core within the data space given by `data`.
 		"""
-		if mu and sigma and delta:
+		if mu is not None and sigma is not None and delta is not None:
 			return Core(mu=mu, sigma=sigma, delta=delta)
 		elif self._data_range is not None:
 			mu = self.random_state.rand(self.dim) * \

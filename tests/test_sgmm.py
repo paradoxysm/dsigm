@@ -39,16 +39,22 @@ def test_initialize_core_error():
 
 @pytest.mark.parametrize("data", [
 	([0,1,3,4,1,2]),
-	([[0,21,3],[2,4,3],[34,3,2]]),
+	([[0,21,3],[2,4,3],[34,3,2],[2,5,1],[1,6,3],[23,12,5],[2,6,9]]),
 ])
 
 def test_initialize(data):
 	sgmm = SGMM()
 	sgmm._initialize(data)
+	sgmm = SGMM(init='random')
+	sgmm._initialize(data)
+
+def test_initialize_error():
+	with pytest.raises(ValueError):
+		sgmm = SGMM(init='bad')._initialize([0])
 
 @pytest.mark.parametrize("data", [
 	([0,1,3,4,1,2]),
-	([[0,21,3],[2,4,3],[34,3,2]]),
+	([[0,21,3],[2,4,3],[34,3,2],[2,5,1],[1,6,3],[23,12,5],[2,6,9]]),
 ])
 
 def test_expectation(data):
@@ -64,7 +70,7 @@ def test_expectation_error():
 
 @pytest.mark.parametrize("data", [
 	([0,1,3,4,1,2]),
-	([[0,21,3],[2,4,3],[34,3,2]]),
+	([[0,21,3],[2,4,3],[34,3,2],[2,5,1],[1,6,3],[23,12,5],[2,6,9]]),
 ])
 
 def test_maximization(data):
@@ -74,8 +80,8 @@ def test_maximization(data):
 	sgmm._maximization(data, p)
 
 @pytest.mark.parametrize("data, n_parameters", [
-	([0,1,3,4,1,2], 29),
-	([[0,21,3],[2,4,3],[34,3,2]], 99),
+	([0,1,3,4,1,2], 14),
+	([[0,21,3],[2,4,3],[34,3,2],[2,5,1],[1,6,3],[23,12,5],[2,6,9]], 49),
 ])
 
 def test_score_bic_parameters(data, n_parameters):
@@ -87,8 +93,8 @@ def test_score_bic_parameters(data, n_parameters):
 	sgmm.bic(data)
 
 @pytest.mark.parametrize("data, n_cores", [
-	([0,1,3,4,1,2], 10),
-	([[0,21,3],[2,4,3],[34,3,2]], 9),
+	([0,1,3,4,1,2], 5),
+	([[0,21,3],[2,4,3],[34,3,2],[2,5,1],[1,6,3],[23,12,5],[2,6,9]], 4),
 ])
 
 def test_stabilize(data, n_cores):
@@ -100,7 +106,7 @@ def test_stabilize(data, n_cores):
 @pytest.mark.parametrize("data", [
 	([0,1,3,4,1,2]),
 	([[0,0,0],[1,1,1],[0,0,0],[-1,1,1],[0,0,1]]),
-	([[0,21,3],[2,4,3],[34,3,2]]),
+	([[0,21,3],[2,4,3],[34,3,2],[2,5,1],[1,6,3],[23,12,5],[2,6,9]]),
 ])
 
 def test_fit_single(data):
@@ -111,7 +117,7 @@ def test_fit_single(data):
 @pytest.mark.parametrize("data", [
 	([0,1,3,4,1,2]),
 	([[0,0,0],[1,1,1],[0,0,0],[-1,1,1],[0,0,1]]),
-	([[0,21,3],[2,4,3],[34,3,2]]),
+	([[0,21,3],[2,4,3],[34,3,2],[2,5,1],[1,6,3],[23,12,5],[2,6,9]]),
 ])
 
 def test_fit(data):
@@ -121,7 +127,7 @@ def test_fit(data):
 @pytest.mark.parametrize("data", [
 	([0,1,3,4,1,2]),
 	([[0,0,0],[1,1,1],[0,0,0],[-1,1,1],[0,0,1]]),
-	([[0,21,3],[2,4,3],[34,3,2]]),
+	([[0,21,3],[2,4,3],[34,3,2],[2,5,1],[1,6,3],[23,12,5],[2,6,9]]),
 ])
 
 def test_predict_warns(data):
@@ -132,7 +138,7 @@ def test_predict_warns(data):
 @pytest.mark.parametrize("data", [
 	([0,1,3,4,1,2]),
 	([[0,0,0],[1,1,1],[0,0,0],[-1,1,1],[0,0,1]]),
-	([[0,21,3],[2,4,3],[34,3,2]]),
+	([[0,21,3],[2,4,3],[34,3,2],[2,5,1],[1,6,3],[23,12,5],[2,6,9]]),
 ])
 
 def test_predict(data):
