@@ -3,8 +3,6 @@
 [![Build Status](https://travis-ci.com/paradoxysm/dsigm.svg?branch=master)](https://travis-ci.com/paradoxysm/dsigm)
 [![codecov](https://codecov.io/gh/paradoxysm/dsigm/branch/master/graph/badge.svg?token=cpaPkUHKah)](https://codecov.io/gh/paradoxysm/dsigm)
 [![GitHub](https://img.shields.io/github/license/paradoxysm/dsigm?color=blue)](https://github.com/paradoxysm/dsigm/blob/master/LICENSE)
-[![Maintainability](https://api.codeclimate.com/v1/badges/db50b93805392126d265/maintainability)](https://codeclimate.com/github/paradoxysm/dsigm/maintainability)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fparadoxysm%2Fdsigm.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fparadoxysm%2Fdsigm?ref=badge_shield)
 
 ## Overview
 
@@ -36,6 +34,9 @@ pip install dsigm
 See the [changelog](https://github.com/paradoxysm/dsigm/blob/master/CHANGES.md) for a history of notable changes to dsigm.
 
 ## Development
+
+[![Maintainability](https://api.codeclimate.com/v1/badges/db50b93805392126d265/maintainability)](https://codeclimate.com/github/paradoxysm/dsigm/maintainability)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fparadoxysm%2Fdsigm.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fparadoxysm%2Fdsigm?ref=badge_shield)
 
 dsigm is still under development.
 
