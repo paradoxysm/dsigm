@@ -350,9 +350,9 @@ class SGMM:
 		if p_unweighted.shape != (len(self.cores), len(data)):
 			raise RuntimeError("Expectation Step found erroneous shape")
 		delta_cores = [self.cores[i].delta for i in range(len(self.cores))]
-		b_vector = p_unweighted * delta_cores
-		b = b_vector / (np.sum(b_vector, axis=0) + 1e-8)
-		returb b
+		p_vector = p_unweighted * delta_cores
+		p = p_vector / (np.sum(p_vector, axis=0) + 1e-8)
+		return p
 
 	def _maximization(self, data, p):
 		"""
@@ -457,16 +457,16 @@ class SGMM:
 		Akaike Information Criterion for the current model
 		on the input `data`.
 
-        Parameters
-        ----------
-        data : array-like, shape (n_samples, n_features)
-			List of `n_features`-dimensional data points.
-			Each row corresponds to a single data point.
+		Parameters
+		----------
+		data : array-like, shape (n_samples, n_features)
+				List of `n_features`-dimensional data points.
+				Each row corresponds to a single data point.
 
-        -------
-        aic : float
-			Akaike Information Criterion. The lower the better.
-        """
+		-------
+		aic : float
+				Akaike Information Criterion. The lower the better.
+		"""
 		fit = -2 * self.score(self._expectation(data)) * len(data)
 		penalty = 2 * self._n_parameters()
 		return fit + penalty
