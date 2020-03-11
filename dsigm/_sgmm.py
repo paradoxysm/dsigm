@@ -78,16 +78,12 @@ class SGMM:
 		The range that encompasses the data in each axis.
 	"""
 	def __init__(self, init_cores=5, init='kmeans',
-					stabilize=((1.6, -10), (2.5, 10)), n_init=10, max_iter=200,
+					stabilize=None, n_init=10, max_iter=200,
 					tol=1e-3, reg_covar=1e-6, random_state=None):
 		self.dim = -1
 		self.init_cores = init_cores
 		self.init = init
-		self.stabilize = True if stabilize is not None else None
-		self.growth_rate = stabilize[0][0] if stabilize is not None else None
-		self.growth_threshold = stabilize[0][1]  if stabilize is not None else None
-		self.decay_rate = stabilize[1][0] if stabilize is not None else None
-		self.decay_threshold = stabilize[1][1] if stabilize is not None else None
+		self.stabilize = stabilize
 		self.n_init = n_init
 		self.max_iter = max_iter
 		self.tol = tol
@@ -171,8 +167,8 @@ class SGMM:
 			warnings.warn('Model not initialized so prediction ignored.', InitializationWarning)
 		else:
 			data = self._validate_data(data)
-			estimates = np.asarray(self._expectation(data)).T
-			return estimates.argmax(axis=-1)
+			p, p_norm, resp = np.asarray(self._expectation(data)).T
+			return p.argmax(axis=-1)
 
 	def _validate_data(self, data):
 		"""
