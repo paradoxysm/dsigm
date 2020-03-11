@@ -220,9 +220,9 @@ class SGMM:
 		self._initialize(data)
 		self.inertia = -np.inf
 		for iter in range(1, self.max_iter + 1):
-			p, resp = self._expectation(data)
+			p, p_norm, resp = self._expectation(data)
 			self._maximization(data, resp)
-			prev_inertia, self.inertia = self.inertia, self.score(p)
+			prev_inertia, self.inertia = self.inertia, self.score(p_norm)
 			if np.abs(self.inertia - prev_inertia) < self.tol:
 				self.converged = True
 				break
@@ -278,7 +278,7 @@ class SGMM:
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
 			
-		resp : array-like, shape (n_samples, n_components)
+		resp : array-like, shape (n_samples, n_cores)
 			The unweighted probabilities for each data sample in `data`.
 
 		Returns
@@ -346,20 +346,24 @@ class SGMM:
 		p : array, shape (n_cores, n_samples)
 			Probabilities of samples under each Core.
 			
-		resp : array-like, shape (n_samples, n_components)
+		p_norm : array, shape (n_samples,)
+			Probabilities of each sample.
+			
+		resp : array-like, shape (n_cores, n_samples)
 			The unweighted probabilities for each data sample in `data`.
 		"""
 		data = self._validate_data(data)
-		resp = []
+		p_unweighted = []
 		for core in self.cores:
-			resp.append(core.pdf(data))
-		resp = np.asarray(resp)
-		if resp.shape != (len(self.cores), len(data)):
+			p_unweighted.append(core.pdf(data))
+		p_unweighted = np.asarray(p_unweighted)
+		if p_unweighted.shape != (len(self.cores), len(data)):
 			raise RuntimeError("Expectation Step found erroneous shape")
 		delta_cores = [self.cores[i].delta for i in range(len(self.cores))]
-		p_vector = resp * delta_cores
-		p = p_vector / (np.sum(p_vector, axis=0) + 1e-8)
-		return p, resp
+		p = p_unweighted * delta_cores
+		p_norm = np.sum(p, axis=0) 
+		resp = p / (p_norm + 1e-8)
+		return p, p_norm, resp
 
 	def _maximization(self, data, resp):
 		"""
@@ -371,11 +375,11 @@ class SGMM:
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
 
-		resp : array-like, shape (n_samples, n_components)
+		resp : array-like, shape (n_cores, n_samples)
 			The unweighted probabilities for each data sample in `data`.
 		"""
 		data = self._validate_data(data)
-		params = self._estimate_parameters(data, p)
+		params = self._estimate_parameters(data, resp.T)
 		for i in range(len(self.cores)):
 			mu = params['mu'][i]
 			sigma = params['sigma'][i]
@@ -422,21 +426,21 @@ class SGMM:
 			for i in range(np.abs(int(step))):
 				self.cores = np.concatenate((self.cores, [self._initialize_core()]))
 
-	def score(self, p):
+	def score(self, p_norm):
 		"""
 		Compute the per-sample average log-likelihood.
 
 		Parameters
 		----------
-		p : array-like, shape (n_cores, n_samples)
-			Probabilities of samples under each Core.
+		p_norm : array-like, shape (n_samples,)
+			Probabilities of samples.
 
 		Returns
 		-------
 		log_likelihood : float
 			Log likelihood of the model.
 		"""
-		return np.mean(np.sum(np.log(p+1e-8), axis=0))
+		return np.mean(np.log(p+1e-8))
 
 	def bic(self, data):
 		"""
@@ -454,7 +458,8 @@ class SGMM:
 		bic : float
 			Bayesian Information Criterion. The lower the better.
 		"""
-		fit = -2 * self.score(self._expectation(data)) * len(data)
+		p, p_norm, resp = self._expectation(data)
+		fit = -2 * self.score(p_norm) * len(data)
 		penalty = self._n_parameters() * np.log(len(data))
 		return fit + penalty
 
@@ -473,7 +478,8 @@ class SGMM:
 		aic : float
 				Akaike Information Criterion. The lower the better.
 		"""
-		fit = -2 * self.score(self._expectation(data)) * len(data)
+		p, p_norm, resp = self._expectation(data)
+		fit = -2 * self.score(p_norm) * len(data)
 		penalty = 2 * self._n_parameters()
 		return fit + penalty
 
