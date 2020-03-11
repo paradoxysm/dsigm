@@ -90,6 +90,29 @@ class SGMM:
 		self.inertia = -np.inf
 		self.cores = []
 		self._data_range = None
+		self.converged = False
+
+	def get_params(self):
+		"""
+		Return the parameters of the model.
+
+		Returns
+		-------
+		mu : array-like, shape (n_cores, n_features)
+			List of the means for all Cores in the model.
+
+		sigma : array-like, shape (n_cores, n_features, n_features)
+			List of the covariances for all Cores in the model.
+
+		delta : array-like, shape (n_cores, 1)
+			List of the weights for all Cores in the model.
+		"""
+		mu, sigma, delta = [], [], []
+		for c in self.cores:
+			mu.append(c.mu)
+			sigma.append(c.sigma)
+			delta.append(c.delta)
+		return np.asarray(mu), np.asarray(sigma), np.asarray(delta)
 
 	def fit(self, data):
 		"""
@@ -338,7 +361,7 @@ class SGMM:
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
 
-		prob : array, shape (n_cores, n_samples)
+		b : array, shape (n_cores, n_samples)
 			Probabilities of samples under each Core.
 		"""
 		data = self._validate_data(data)
@@ -427,6 +450,25 @@ class SGMM:
 		"""
 		fit = -2 * self.score(self._expectation(data)) * len(data)
 		penalty = self._n_parameters() * np.log(len(data))
+		return fit + penalty
+
+	def aic(self, X):
+		"""
+		Akaike Information Criterion for the current model
+		on the input `data`.
+
+        Parameters
+        ----------
+        data : array-like, shape (n_samples, n_features)
+			List of `n_features`-dimensional data points.
+			Each row corresponds to a single data point.
+
+        -------
+        aic : float
+			Akaike Information Criterion. The lower the better.
+        """
+		fit = -2 * self.score(self._expectation(data)) * len(data)
+		penalty = 2 * self._n_parameters()
 		return fit + penalty
 
 	def bic_gradient(self, data, p):
