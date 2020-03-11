@@ -17,8 +17,6 @@ This is a pre-release record of changes that will be implemented in `dsigm 0.3.0
 - ![Feature](https://img.shields.io/badge/-Feature-blueviolet) : `format_array` implemented in `_utils`.
 - ![Feature](https://img.shields.io/badge/-Feature-blueviolet) : `create_random_state` implemented in `_utils`.
 - ![Enhancement](https://img.shields.io/badge/-Enhancement-purple) : `SGMM` initializes through `sklearn.cluster.KMeans`.
-- ![Fix](https://img.shields.io/badge/-Fix-red) : `SGMM.fit` now converges when self-stabilizing as per [ISS #2](https://github.com/paradoxysm/kdtrees/issues/2).
 - ![Documentation](https://img.shields.io/badge/-Documentation-blue) : Documentation for functions in `_utils`.
-- ![Documentation](https://img.shields.io/badge/-Documentation-blue) : Documentation for `SGMM`.
-- ![Documentation](https://img.shields.io/badge/-Documentation-blue) : Guides for `SGMM`.
+- ![Documentation](https://img.shields.io/badge/-Documentation-blue) : 1D and 2D Guides for `SGMM`.
 - ![Other](https://img.shields.io/badge/-Other-lightgrey) : Package structure and repository established.
