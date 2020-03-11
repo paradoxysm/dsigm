@@ -440,7 +440,7 @@ class SGMM:
 		log_likelihood : float
 			Log likelihood of the model.
 		"""
-		return np.mean(np.log(p+1e-8))
+		return np.mean(np.log(p_norm+1e-8))
 
 	def bic(self, data):
 		"""
