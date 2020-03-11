@@ -220,8 +220,8 @@ class SGMM:
 		self._initialize(data)
 		self.inertia = -np.inf
 		for iter in range(1, self.max_iter + 1):
-			p = self._expectation(data)
-			self._maximization(data, p)
+			p, resp = self._expectation(data)
+			self._maximization(data, resp)
 			prev_inertia, self.inertia = self.inertia, self.score(p)
 			if np.abs(self.inertia - prev_inertia) < self.tol:
 				self.converged = True
@@ -248,7 +248,19 @@ class SGMM:
 		data = self._validate_data(data)
 		self._data_range = np.asarray([np.min(data, axis=0), np.max(data, axis=0)])
 		cores = []
-		params = self._estimate_parameters(data)
+		params = None
+		if self.init == 'kmeans':
+			resp = np.zeros((len(data), self.init_cores))
+			label = KMeans(n_clusters=self.init_cores, n_init=1,
+							random_state=self.random_state).fit(data).labels_
+			resp[np.arange(len(data)), label] = 1
+			params = self._estimate_parameters(data, resp)
+		elif self.init == 'random':
+			none = np.full((self.init_cores,), None)
+			params = {'mu':none, 'sigma':none, 'delta':none}
+		else:
+			raise ValueError("Unimplemented initialization method '%s'"
+                             % self.init)
 		for n in range(self.init_cores):
 			mu, sigma, delta = params['mu'][n], params['sigma'][n], params['delta'][n]
 			core = self._initialize_core(mu=mu, sigma=sigma, delta=delta)
@@ -256,7 +268,7 @@ class SGMM:
 		self.cores = np.asarray(cores)
 		return self.cores
 
-	def _estimate_parameters(self, data):
+	def _estimate_parameters(self, data, resp):
 		"""
 		Initialize model parameters.
 
@@ -265,32 +277,24 @@ class SGMM:
 		data : array-like, shape (n_samples, n_features)
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
+			
+		resp : array-like, shape (n_samples, n_components)
+			The unweighted probabilities for each data sample in `data`.
 
 		Returns
 		-------
 		params : dict
-			Initial parameters for the model.
+			Estimated parameters for the model.
 		"""
-		if self.init == 'kmeans':
-			resp = np.zeros((len(data), self.init_cores))
-			label = KMeans(n_clusters=self.init_cores, n_init=1,
-							random_state=self.random_state).fit(data).labels_
-			resp[np.arange(len(data)), label] = 1
-			delta = np.sum(resp, axis=0) + 10 * np.finfo(resp.dtype).eps
-			mu = np.dot(resp.T, data) / delta[:,np.newaxis]
-			sigma = np.empty((self.init_cores, self.dim, self.dim))
-			for k in range(self.init_cores):
-				diff = data - mu[k]
-				sigma[k] = np.dot(resp[:, k] * diff.T, diff) / delta[k]
-				sigma[k].flat[::self.dim + 1] += self.reg_covar
-			delta = (delta / len(data))[:,np.newaxis]
-			return {'mu':mu, 'sigma':sigma, 'delta':delta}
-		elif self.init == 'random':
-			none = np.full((self.init_cores,), None)
-			return {'mu':none, 'sigma':none, 'delta':none}
-		else:
-			raise ValueError("Unimplemented initialization method '%s'"
-                             % self.init)
+		delta = np.sum(resp, axis=0) + 10 * np.finfo(resp.dtype).eps
+		mu = np.dot(resp.T, data) / delta[:,np.newaxis]
+		sigma = np.empty((self.init_cores, self.dim, self.dim))
+		for k in range(self.init_cores):
+			diff = data - mu[k]
+			sigma[k] = np.dot(resp[:, k] * diff.T, diff) / delta[k]
+			sigma[k].flat[::self.dim + 1] += self.reg_covar
+		delta = (delta / len(data))[:,np.newaxis]
+		return {'mu':mu, 'sigma':sigma, 'delta':delta}
 
 	def _initialize_core(self, mu=None, sigma=None, delta=None):
 		"""
@@ -341,20 +345,23 @@ class SGMM:
 		-------
 		p : array, shape (n_cores, n_samples)
 			Probabilities of samples under each Core.
+			
+		resp : array-like, shape (n_samples, n_components)
+			The unweighted probabilities for each data sample in `data`.
 		"""
 		data = self._validate_data(data)
-		p_unweighted = []
+		resp = []
 		for core in self.cores:
-			p_unweighted.append(core.pdf(data))
-		p_unweighted = np.asarray(p_unweighted)
-		if p_unweighted.shape != (len(self.cores), len(data)):
+			resp.append(core.pdf(data))
+		resp = np.asarray(resp)
+		if resp.shape != (len(self.cores), len(data)):
 			raise RuntimeError("Expectation Step found erroneous shape")
 		delta_cores = [self.cores[i].delta for i in range(len(self.cores))]
-		p_vector = p_unweighted * delta_cores
+		p_vector = resp * delta_cores
 		p = p_vector / (np.sum(p_vector, axis=0) + 1e-8)
-		return p
+		return p, resp
 
-	def _maximization(self, data, p):
+	def _maximization(self, data, resp):
 		"""
 		Conduct the maximization step.
 
@@ -364,16 +371,15 @@ class SGMM:
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
 
-		p : array, shape (n_cores, n_samples)
-			Probabilities of samples under each Core.
+		resp : array-like, shape (n_samples, n_components)
+			The unweighted probabilities for each data sample in `data`.
 		"""
 		data = self._validate_data(data)
+		params = self._estimate_parameters(data, p)
 		for i in range(len(self.cores)):
-			mu = np.sum(p[i].reshape(len(data), 1) * data, axis=0) / np.sum(p[i] + 1e-8)
-			sigma = np.dot((p[i].reshape(len(data), 1) * (data - mu)).T,
-										(data - mu)) / np.sum(p[i] + 1e-8)
-			np.fill_diagonal(sigma, sigma.diagonal() + self.reg_covar)
-			delta = [np.mean(p[i])]
+			mu = params['mu'][i]
+			sigma = params['sigma'][i]
+			delta = params['delta'][i]
 			self.cores[i] = Core(mu=mu, sigma=sigma, delta=delta)
 
 	def _stabilize(self, data):
@@ -452,7 +458,7 @@ class SGMM:
 		penalty = self._n_parameters() * np.log(len(data))
 		return fit + penalty
 
-	def aic(self, X):
+	def aic(self, data):
 		"""
 		Akaike Information Criterion for the current model
 		on the input `data`.
