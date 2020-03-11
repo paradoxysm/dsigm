@@ -343,15 +343,18 @@ class SGMM:
 			Probabilities of samples under each Core.
 		"""
 		data = self._validate_data(data)
-		p = []
+		p_unweighted = []
 		for core in self.cores:
-			p.append(core.pdf(data))
-		p = np.asarray(p)
-		if p.shape != (len(self.cores), len(data)):
+			p_unweighted.append(core.pdf(data))
+		p_unweighted = np.asarray(p_unweighted)
+		if p_unweighted.shape != (len(self.cores), len(data)):
 			raise RuntimeError("Expectation Step found erroneous shape")
-		return p
+		delta_cores = [self.cores[i].delta for i in range(len(self.cores))]
+		b_vector = p_unweighted * delta_cores
+		b = b_vector / (np.sum(b_vector, axis=0) + 1e-8)
+		returb b
 
-	def _maximization(self, data, prob):
+	def _maximization(self, data, p):
 		"""
 		Conduct the maximization step.
 
@@ -361,13 +364,10 @@ class SGMM:
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
 
-		b : array, shape (n_cores, n_samples)
+		p : array, shape (n_cores, n_samples)
 			Probabilities of samples under each Core.
 		"""
 		data = self._validate_data(data)
-		delta_cores = [self.cores[i].delta for i in range(len(self.cores))]
-		b_vector = prob * delta_cores
-		b = b_vector / (np.sum(b_vector, axis=0) + 1e-8)
 		for i in range(len(self.cores)):
 			mu = np.sum(b[i].reshape(len(data), 1) * data, axis=0) / np.sum(b[i] + 1e-8)
 			sigma = np.dot((b[i].reshape(len(data), 1) * (data - mu)).T,
