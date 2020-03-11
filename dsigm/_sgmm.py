@@ -369,11 +369,11 @@ class SGMM:
 		"""
 		data = self._validate_data(data)
 		for i in range(len(self.cores)):
-			mu = np.sum(b[i].reshape(len(data), 1) * data, axis=0) / np.sum(b[i] + 1e-8)
-			sigma = np.dot((b[i].reshape(len(data), 1) * (data - mu)).T,
-										(data - mu)) / np.sum(b[i] + 1e-8)
+			mu = np.sum(p[i].reshape(len(data), 1) * data, axis=0) / np.sum(p[i] + 1e-8)
+			sigma = np.dot((p[i].reshape(len(data), 1) * (data - mu)).T,
+										(data - mu)) / np.sum(p[i] + 1e-8)
 			np.fill_diagonal(sigma, sigma.diagonal() + self.reg_covar)
-			delta = [np.mean(b[i])]
+			delta = [np.mean(p[i])]
 			self.cores[i] = Core(mu=mu, sigma=sigma, delta=delta)
 
 	def _stabilize(self, data):
