@@ -167,8 +167,9 @@ class SGMM:
 			warnings.warn('Model not initialized so prediction ignored.', InitializationWarning)
 		else:
 			data = self._validate_data(data)
-			p, p_norm, resp = np.asarray(self._expectation(data)).T
-			return p.argmax(axis=-1)
+			p, p_norm, resp = self._expectation(data)
+			estimates = np.asarray(p).T
+			return estimates.argmax(axis=-1)
 
 	def _validate_data(self, data):
 		"""
