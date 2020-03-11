@@ -33,8 +33,9 @@ class SGMM:
             'kmeans' : responsibilities are initialized using kmeans.
             'random' : responsibilities are initialized randomly.
 
-	stabilize : int or None, default=0.05
-		The adaption rate for stabilization of the number of Cores.
+	stabilize : array-like or None, shape (2,2),
+					default=((2.5, -10), (2.5, 10))
+		Rates and thresholds for stabilization of the number of Cores.
 		If None, stabilization is disabled.
 
 	n_init : int, default=10
@@ -76,12 +77,17 @@ class SGMM:
 	_data_range : array-like, shape (2, n_features)
 		The range that encompasses the data in each axis.
 	"""
-	def __init__(self, init_cores=5, init='kmeans', stabilize=0.05, n_init=10, max_iter=200,
+	def __init__(self, init_cores=5, init='kmeans',
+					stabilize=((1.6, -10), (2.5, 10)), n_init=10, max_iter=200,
 					tol=1e-3, reg_covar=1e-6, random_state=None):
 		self.dim = -1
 		self.init_cores = init_cores
 		self.init = init
-		self.stabilize = stabilize
+		self.stabilize = True if stabilize is not None else None
+		self.growth_rate = stabilize[0][0] if stabilize is not None else None
+		self.growth_threshold = stabilize[0][1]  if stabilize is not None else None
+		self.decay_rate = stabilize[1][0] if stabilize is not None else None
+		self.decay_threshold = stabilize[1][1] if stabilize is not None else None
 		self.n_init = n_init
 		self.max_iter = max_iter
 		self.tol = tol
@@ -224,10 +230,14 @@ class SGMM:
 			self._maximization(data, p)
 			prev_inertia, self.inertia = self.inertia, self.score(p)
 			if np.abs(self.inertia - prev_inertia) < self.tol:
-				self.converged = True
-				break
-			if self.stabilize is not None:
-				self._stabilize(data)
+				change = False
+				if self.stabilize:
+					change = self._stabilize(data)
+				if change:
+					continue
+				else:
+					self.converged = True
+					break
 		return self.inertia, self.cores
 
 	def _initialize(self, data):
@@ -339,7 +349,7 @@ class SGMM:
 
 		Returns
 		-------
-		p : array, shape (n_cores, n_samples)
+		b : array, shape (n_cores, n_samples)
 			Probabilities of samples under each Core.
 		"""
 		data = self._validate_data(data)
@@ -349,9 +359,13 @@ class SGMM:
 		p = np.asarray(p)
 		if p.shape != (len(self.cores), len(data)):
 			raise RuntimeError("Expectation Step found erroneous shape")
-		return p
+		delta_cores = [self.cores[i].delta for i in range(len(self.cores))]
+		b_vector = prob * delta_cores
+		b = b_vector / (np.sum(b_vector, axis=0) + 1e-8)
+		b = np.asarray(b)
+		return b
 
-	def _maximization(self, data, prob):
+	def _maximization(self, data, b):
 		"""
 		Conduct the maximization step.
 
@@ -361,13 +375,10 @@ class SGMM:
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
 
-		prob : array, shape (n_cores, n_samples)
+		b : array, shape (n_cores, n_samples)
 			Probabilities of samples under each Core.
 		"""
 		data = self._validate_data(data)
-		delta_cores = [self.cores[i].delta for i in range(len(self.cores))]
-		b_vector = prob * delta_cores
-		b = b_vector / (np.sum(b_vector, axis=0) + 1e-8)
 		for i in range(len(self.cores)):
 			mu = np.sum(b[i].reshape(len(data), 1) * data, axis=0) / np.sum(b[i] + 1e-8)
 			sigma = np.dot((b[i].reshape(len(data), 1) * (data - mu)).T,
@@ -395,26 +406,18 @@ class SGMM:
 			Probabilities of samples under each Core.
 		"""
 		p = self._expectation(data)
-		gradient = self.bic_gradient(data, p)
-		# DOESN'T CONVERGE WELL
-		'''
-			Using pre maximization p and post maximization p
-			???
-		'''
-		step = round(gradient * self.stabilize)
-		if step > 0:
-			fitness = []
-			for i in range(len(p)):
-				f = np.sum((p[i] - np.sum(np.delete(p, i, axis=0), axis=0)).clip(min=0))
-				fitness.append((f, i))
-			fitness = np.asarray(sorted(fitness, key=lambda x: x[1]))
-			step = step if step < len(self.cores) else 0
-			mask = fitness[:int(step), 1].astype(int)
-			if len(mask) > 0:
-				self.cores = np.delete(self.cores, mask, axis=0)
-		elif step < 0:
-			for i in range(np.abs(int(step))):
-				self.cores = np.concatenate((self.cores, [self._initialize_core()]))
+		coverage = []
+		for i in range(len(p)):
+			c = np.sum((p[i] - np.sum(np.delete(p, i, axis=0), axis=0)).clip(min=0))
+			coverage.append(c)
+		coverage = np.asarray(coverage)
+		cumulate = np.sum(p, axis=1)
+		growth = np.log(cumulate)*self.growth_rate - \
+					np.log(len(data) / len(self.cores))
+		fitness = self.decay_rate / (coverage + 1e-8) - growth
+		print(np.median(fitness))
+		change = False
+		return change
 
 	def score(self, p):
 		"""
@@ -430,7 +433,7 @@ class SGMM:
 		log_likelihood : float
 			Log likelihood of the model.
 		"""
-		return np.mean(np.sum(np.log(p+1e-8), axis=0))
+		return np.mean(np.log(np.sum(p, axis=0) + 1e-8))
 
 	def bic(self, data):
 		"""
@@ -470,34 +473,6 @@ class SGMM:
 		fit = -2 * self.score(self._expectation(data)) * len(data)
 		penalty = 2 * self._n_parameters()
 		return fit + penalty
-
-	def bic_gradient(self, data, p):
-		"""
-		Return an approximate gradient of the Bayesian Information
-		Criterion for the current model on the input `data`.
-
-		Parameters
-		----------
-		data : array-like, shape (n_samples, n_features)
-			List of `n_features`-dimensional data points.
-			Each row corresponds to a single data point.
-
-		p : array-like, shape (n_cores, n_samples)
-			Probabilities of samples under each Core.
-
-		Returns
-		-------
-		gradient : float
-			Estimated gradient of the curve. Positive gradients
-			imply excess Cores, while negative gradients imply
-			lack of Cores.
-		"""
-		score = np.exp(self.score(p))
-		fit_coeff = (len(self.cores) * (1 - score)) / (score + 1e-8)
-		fit_gradient = -2 * (90 / (len(self.cores) * (len(self.cores) + fit_coeff))) * len(data)
-		penalty_gradient = (np.square(self.dim) + 1.5 * self.dim + 1) * np.log(len(data))
-		gradient = fit_gradient + penalty_gradient
-		return gradient
 
 	def _n_parameters(self):
 		"""
