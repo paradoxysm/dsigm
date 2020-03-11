@@ -339,7 +339,7 @@ class SGMM:
 
 		Returns
 		-------
-		b : array, shape (n_cores, n_samples)
+		p : array, shape (n_cores, n_samples)
 			Probabilities of samples under each Core.
 		"""
 		data = self._validate_data(data)
@@ -349,11 +349,7 @@ class SGMM:
 		p = np.asarray(p)
 		if p.shape != (len(self.cores), len(data)):
 			raise RuntimeError("Expectation Step found erroneous shape")
-		delta_cores = [self.cores[i].delta for i in range(len(self.cores))]
-		b_vector = prob * delta_cores
-		b = b_vector / (np.sum(b_vector, axis=0) + 1e-8)
-		b = np.asarray(b)
-		return b
+		return p
 
 	def _maximization(self, data, prob):
 		"""
@@ -369,6 +365,9 @@ class SGMM:
 			Probabilities of samples under each Core.
 		"""
 		data = self._validate_data(data)
+		delta_cores = [self.cores[i].delta for i in range(len(self.cores))]
+		b_vector = prob * delta_cores
+		b = b_vector / (np.sum(b_vector, axis=0) + 1e-8)
 		for i in range(len(self.cores)):
 			mu = np.sum(b[i].reshape(len(data), 1) * data, axis=0) / np.sum(b[i] + 1e-8)
 			sigma = np.dot((b[i].reshape(len(data), 1) * (data - mu)).T,
