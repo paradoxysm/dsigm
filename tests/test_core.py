@@ -44,6 +44,12 @@ def test_core_pdf():
 	p = np.around(core.pdf(data), decimals=4)
 	assert np.all(p == [0.0001, 0.0540, 0.3989, 0.2420, 0.0000, 0.0540, 0.0540])
 
+def test_core_logpdf():
+	core = Core()
+	data = [-4,-2,0,1,5,2,2]
+	p = np.around(core.logpdf(data), decimals=4)
+	assert np.all(p == [-8.9189, -2.9189, -0.9189, -1.4189, -13.4189, -2.9189, -2.9189])
+
 """
 Test
 ----
