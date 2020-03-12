@@ -81,6 +81,23 @@ class Core:
 		self._validate_init()
 		return mvn.pdf(x=data, mean=self.mu, cov=self.sigma)
 
+	def logpdf(self, data):
+		"""
+		Log of multivariate normal probability density function.
+
+		Parameters
+        ----------
+        data : array-like
+            Quantiles, with the last axis of `data` denoting the features.
+
+        Returns
+        -------
+        pdf : ndarray or scalar
+            Log probability density function evaluated at `datas`
+		"""
+		data = format_array(data)
+		self._validate_init()
+		return mvn.logpdf(x=data, mean=self.mu, cov=self.sigma)
 
 class CoreCluster:
 	"""
