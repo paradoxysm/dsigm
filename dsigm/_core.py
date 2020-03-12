@@ -47,7 +47,8 @@ class Core:
 
 	def _validate_init(self):
 		"""
-		Validate the argument types for __init__
+		Validate the attributes of the Core.
+		If `dim` has not yet been set, set it now.
 		"""
 		if self.mu.ndim != 1:
 			raise ValueError("Invalid argument provided for mu. Must be a vector")
@@ -75,7 +76,7 @@ class Core:
         Returns
         -------
         pdf : ndarray or scalar
-            Probability density function evaluated at `datas`
+            Probability density function evaluated at `data`.
 		"""
 		data = format_array(data)
 		self._validate_init()
@@ -93,7 +94,7 @@ class Core:
         Returns
         -------
         pdf : ndarray or scalar
-            Log probability density function evaluated at `datas`
+            Log probability density function evaluated at `data`.
 		"""
 		data = format_array(data)
 		self._validate_init()
@@ -130,7 +131,7 @@ class CoreCluster:
 
 	def _validate_init(self):
 		"""
-		Validate the argument types for __init__
+		Validate the attributes of the CoreCluster.
 		"""
 		if self.cores.ndim != 1 or (self.cores.ndim == 0 and self.cores.size > 0):
 			raise ValueError("Invalid argument provided for cores. Must be a list of Cores")
