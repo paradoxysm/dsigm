@@ -12,3 +12,8 @@ class InitializationWarning(UserWarning):
 	"""
 	Custom warning to capture initialization issues.
 	"""
+
+class StabilizationWarning(UserWarning):
+	"""
+	Custom warning to capture stabilization issues.
+	"""

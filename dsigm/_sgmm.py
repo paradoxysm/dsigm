@@ -9,7 +9,8 @@ from sklearn.datasets import make_spd_matrix
 from sklearn.cluster import KMeans
 
 from ._utils import format_array, create_random_state
-from ._exceptions import ConvergenceWarning, InitializationWarning
+from ._exceptions import ConvergenceWarning, InitializationWarning,
+							StabilizationWarning
 from . import Core
 
 class SGMM:
@@ -299,8 +300,9 @@ class SGMM:
 						interval, bic = (midpoint, interval[1]), (bic_m, bic[1])
 			else:
 				min = 0 if bic[0] <= bic[1] else 1
+				warnings.warn("Stabilization encountered local maxima",
+								StabilizationWarning)
 				self.fit(data, stabilize=False, init_cores=interval[min])
-				self.converged = False
 				return self.inertia, self.cores
 		self.fit(data, stabilize=False, init_cores=interval[0])
 		return self.inertia, self.cores
