@@ -11,6 +11,7 @@
 
 ### Version 0.3.1
 This is a pre-release record of changes that will be implemented in `dsigm 0.3.1`.
+- ![Enhancement](https://img.shields.io/badge/-Enhancement-purple) :`SGMM` now operates with log pdf as opposed to pdf.
 - ![Fix](https://img.shields.io/badge/-Fix-red) : `SGMM._expectation` now weights the probabilities so that all referring functions get the proper result as per [ISS #4](https://github.com/paradoxysm/dsigm/issues/4).
 - ![Fix](https://img.shields.io/badge/-Fix-red) : `SGMM._stabilize` implements a new algorithm that converges properly as per [ISS #2](https://github.com/paradoxysm/dsigm/issues/2).
 - ![Documentation](https://img.shields.io/badge/-Documentation-blue) : Documentation `SGMM`.
