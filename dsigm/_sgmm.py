@@ -9,7 +9,7 @@ from sklearn.datasets import make_spd_matrix
 from sklearn.cluster import KMeans
 
 from ._utils import format_array, create_random_state
-from ._exceptions import ConvergenceWarning, InitializationWarning,
+from ._exceptions import ConvergenceWarning, InitializationWarning, \
 							StabilizationWarning
 from . import Core
 
@@ -282,7 +282,7 @@ class SGMM:
 		interval, bic = self._orient_stabilizer(data, init_cores)
 		while interval[1] - interval[0] > 1:
 			midpoint = (interval[0] + interval[1]) // 2
-			bic_m = self.fit(data, stabilize=False, init_cores=midpoint).bic(data)
+			bic_m = SGMM(stabilize=False, init_cores=midpoint).fit(data).bic(data)
 			if bic[0] > bic_m and bic_m > bic[1]:
 				interval, bic = (midpoint, interval[1]), (bic_m, bic[1])
 			elif bic[1] > bic_m and bic_m > bic[0]:
@@ -293,7 +293,7 @@ class SGMM:
 					interval = (m0, interval[1])
 					break
 				else:
-					bic_m0 = self.fit(data, stabilize=False, init_cores=m0).bic(data)
+					bic_m0 = SGMM(stabilize=False, init_cores=m0).fit(data).bic(data)
 					if bic_m0 < bic_m:
 						interval, bic = (interval[0], midpoint), (bic[0], bic_m)
 					else:
@@ -333,20 +333,25 @@ class SGMM:
 		interval = (1, np.inf)
 		bic = (np.inf, np.inf)
 		i, j = init_cores, init_cores + 1
-		bic_i = self.fit(data, stabilize=False, init_cores=i).bic(data)
-		bic_j = self.fit(data, stabilize=False, init_cores=j).bic(data)
+		bic_i = SGMM(stabilize=False, init_cores=i).fit(data).bic(data)
+		bic_j = SGMM(stabilize=False, init_cores=j).fit(data).bic(data)
 		if bic_j - bic_i >= 0:
-			bic_1 = self.fit(data, stabilize=False, init_cores=1).bic(data)
+			bic_1 = SGMM(stabilize=False, init_cores=1).fit(data).bic(data)
 			interval, bic = (1, j), (bic_1, bic_j)
 		else:
 			min, bic_min = j, bic_j
 			while bic_j - bic_i < 0:
-				j += np.abs(int(bic_j - bic_i)) + 1
-				bic_j = self.fit(data, stabilize=False, init_cores=j).bic(data)
+				inc = int(np.abs(bic_j - bic_i) / (10 * np.log(len(data)))) + 1
+				if j + inc > len(data):
+					j = len(data)
+					break
+				else:
+					j += inc
+					bic_j = SGMM(stabilize=False, init_cores=j).fit(data).bic(data)
 			interval, bic = (min, j), (bic_min, bic_j)
 		return interval, bic
 
-	def _estimate_parameters(self, data, resp):
+	def _estimate_parameters(self, data, resp, init_cores):
 		"""
 		Initialize model parameters.
 
@@ -359,6 +364,10 @@ class SGMM:
 		resp : array-like, shape (n_samples, n_cores)
 			The normalized probabilities for each data sample in `data`.
 
+		init_cores : int, default=5
+			The initial number of Cores (Gaussian components)
+			to fit the data.
+
 		Returns
 		-------
 		params : dict
@@ -366,8 +375,8 @@ class SGMM:
 		"""
 		delta = np.sum(resp, axis=0) + 10 * np.finfo(resp.dtype).eps
 		mu = np.dot(resp.T, data) / delta[:,np.newaxis]
-		sigma = np.empty((self.init_cores, self.dim, self.dim))
-		for k in range(self.init_cores):
+		sigma = np.empty((init_cores, self.dim, self.dim))
+		for k in range(init_cores):
 			diff = data - mu[k]
 			sigma[k] = np.dot(resp[:, k] * diff.T, diff) / delta[k]
 			sigma[k].flat[::self.dim + 1] += self.reg_covar
@@ -402,7 +411,7 @@ class SGMM:
 			label = KMeans(n_clusters=init_cores, n_init=1,
 							random_state=self.random_state).fit(data).labels_
 			resp[np.arange(len(data)), label] = 1
-			params = self._estimate_parameters(data, resp)
+			params = self._estimate_parameters(data, resp, init_cores)
 		elif self.init == 'random':
 			none = np.full((init_cores,), None)
 			params = {'mu':none, 'sigma':none, 'delta':none}
@@ -499,7 +508,7 @@ class SGMM:
 			The normalized probabilities for each data sample in `data`.
 		"""
 		data = self._validate_data(data)
-		params = self._estimate_parameters(data, resp.T)
+		params = self._estimate_parameters(data, resp.T, len(resp))
 		for i in range(len(self.cores)):
 			mu = params['mu'][i]
 			sigma = params['sigma'][i]
