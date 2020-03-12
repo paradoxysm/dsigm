@@ -15,12 +15,12 @@ from . import Core
 
 class SGMM:
 	"""
-	A modified Gaussian Mixture Model that stabilizes
+	A modified Gaussian Mixture Model that can stabilize
 	the optimal number of components during fitting.
 
 	SGMM refines the number of components during each
-	iteration of the EM algorithm with a modified
-	Bayesian Information Criterion.
+	iteration of the EM algorithm using a narrowing
+	interval based on the Bayesian Information Criterion.
 
 	Parameters
 	----------
