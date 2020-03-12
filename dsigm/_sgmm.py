@@ -33,17 +33,15 @@ class SGMM:
             'kmeans' : responsibilities are initialized using kmeans.
             'random' : responsibilities are initialized randomly.
 
-	stabilize : array-like or None, shape (2,2),
-					default=((2.5, -10), (2.5, 10))
-		Rates and thresholds for stabilization of the number of Cores.
-		If None, stabilization is disabled.
+	stabilize : True or False, default=True
+		Enable stabilization of the number of Cores.
 
 	n_init : int, default=10
 		Number of times the SGMM  will be run with different
         Core seeds. The final results will be the best output of
         n_init consecutive runs in terms of inertia.
 
-	max_iter : int, default=200
+	max_iter : int, default=100
 		Maximum number of iterations of the SGMM for a
         single run.
 
@@ -78,7 +76,7 @@ class SGMM:
 		The range that encompasses the data in each axis.
 	"""
 	def __init__(self, init_cores=5, init='kmeans',
-					stabilize=None, n_init=10, max_iter=200,
+					stabilize=True, n_init=10, max_iter=100,
 					tol=1e-3, reg_covar=1e-6, random_state=None):
 		self.dim = -1
 		self.init_cores = init_cores
@@ -116,7 +114,7 @@ class SGMM:
 			delta.append(c.delta)
 		return np.asarray(mu), np.asarray(sigma), np.asarray(delta)
 
-	def fit(self, data):
+	def fit(self, data, stabilize=None, init_cores=None):
 		"""
 		Estimate model parameters with the EM algorithm.
 
@@ -132,11 +130,29 @@ class SGMM:
 		data : array-like, shape (n_samples, n_features)
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
+
+		stabilize : True, False, or None, default=None
+			Enable stabilization of the number of Cores.
+			If None, determine based on model.
+
+		init_cores : int, default=None
+			The initial number of Cores (Gaussian components)
+			to fit the data.
+
+		Returns
+		-------
+		self : SGMM
+			Itself, now updated with fitted parameters.
 		"""
 		data = self._validate_data(data)
 		best_inertia, best_cores = self.inertia, self.cores
+		stabilize = self.stabilize if stabilize is None else stabilize
+		init_cores = self.init_cores if init_cores is None else init_cores
 		for init in range(1, self.n_init + 1):
-			inertia, cores = self._fit_single(data)
+			if stabilize:
+				inertia, cores = self._fit_stabilize(data, init_cores)
+			else:
+				inertia, cores = self._fit_single(data, init_cores)
 			if inertia > best_inertia:
 				best_inertia, best_cores = inertia, cores
 		if not self.converged:
@@ -164,7 +180,8 @@ class SGMM:
 			Component labels.
 		"""
 		if len(self.cores) == 0:
-			warnings.warn('Model not initialized so prediction ignored.', InitializationWarning)
+			warnings.warn('Model not initialized so prediction ignored.',
+							InitializationWarning)
 		else:
 			data = self._validate_data(data)
 			p, p_norm, resp = self._expectation(data)
@@ -197,7 +214,7 @@ class SGMM:
 			raise ValueError("Mismatch in dimensions between model and input data.")
 		return data
 
-	def _fit_single(self, data):
+	def _fit_single(self, data, init_cores):
 		"""
 		A single attempt to estimate model parameters
 		with the EM algorithm.
@@ -212,6 +229,10 @@ class SGMM:
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
 
+		init_cores : int, default=5
+			The initial number of Cores (Gaussian components)
+			to fit the data.
+
 		Returns
 		-------
 		inertia : float
@@ -220,26 +241,24 @@ class SGMM:
 		cores : array-like, shape (n_cores,)
 			A list of Cores for this fit trial.
 		"""
-		self._initialize(data)
+		self._initialize(data, init_cores)
 		self.inertia = -np.inf
 		for iter in range(1, self.max_iter + 1):
 			p, p_norm, resp = self._expectation(data)
 			self._maximization(data, resp)
 			prev_inertia, self.inertia = self.inertia, self.score(p_norm)
 			if np.abs(self.inertia - prev_inertia) < self.tol:
-				change = False
-				if self.stabilize:
-					change = self._stabilize(data)
-				if change:
-					continue
-				else:
-					self.converged = True
-					break
+				self.converged = True
+				break
 		return self.inertia, self.cores
 
-	def _initialize(self, data):
+	def _fit_stabilize(self, data, init_cores):
 		"""
-		Initialize a set of Cores within the data space.
+		A single attempt to estimate model parameters
+		with the EM algorithm.
+
+		The method repeatedly converges for various n_cores
+		to pinpoint optimal n_cores.
 
 		Parameters
 		----------
@@ -247,33 +266,82 @@ class SGMM:
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
 
+		init_cores : int, default=5
+			The initial number of Cores (Gaussian components)
+			to fit the data.
+
 		Returns
 		-------
-		cores : array, shape (n_cores,)
-			List of Cores within the data space given by `data`.
+		inertia : float
+			Log likelihood of the model.
+
+		cores : array-like, shape (n_cores,)
+			A list of Cores for this fit trial.
 		"""
-		data = self._validate_data(data)
-		self._data_range = np.asarray([np.min(data, axis=0), np.max(data, axis=0)])
-		cores = []
-		params = None
-		if self.init == 'kmeans':
-			resp = np.zeros((len(data), self.init_cores))
-			label = KMeans(n_clusters=self.init_cores, n_init=1,
-							random_state=self.random_state).fit(data).labels_
-			resp[np.arange(len(data)), label] = 1
-			params = self._estimate_parameters(data, resp)
-		elif self.init == 'random':
-			none = np.full((self.init_cores,), None)
-			params = {'mu':none, 'sigma':none, 'delta':none}
+		interval, bic = self._orient_stabilizer(data, init_cores)
+		while interval[1] - interval[0] > 1:
+			midpoint = (interval[0] + interval[1]) // 2
+			bic_m = self.fit(data, stabilize=False, init_cores=midpoint).bic(data)
+			if bic[0] > bic_m and bic_m > bic[1]:
+				interval, bic = (midpoint, interval[1]), (bic_m, bic[1])
+			elif bic[1] > bic_m and bic_m > bic[0]:
+				interval, bic = (interval[0], midpoint), (bic[0], bic_m)
+			elif bic_m <= bic[0] and bic_m <= bic[1]:
+				m0 = (interval[0] + midpoint) // 2
+				if m0 == interval[0]:
+					interval = (m0, interval[1])
+					break
+				else:
+					bic_m0 = self.fit(data, stabilize=False, init_cores=m0).bic(data)
+					if bic_m0 < bic_m:
+						interval, bic = (interval[0], midpoint), (bic[0], bic_m)
+					else:
+						interval, bic = (midpoint, interval[1]), (bic_m, bic[1])
+			else:
+				min = 0 if bic[0] <= bic[1] else 1
+				self.fit(data, stabilize=False, init_cores=interval[min])
+				self.converged = False
+				return self.inertia, self.cores
+		self.fit(data, stabilize=False, init_cores=interval[0])
+		return self.inertia, self.cores
+
+	def _orient_stabilizer(self, data, init_cores):
+		"""
+		Orient the initial interval for the stabilizer.
+
+		Parameters
+		----------
+		data : array-like, shape (n_samples, n_features)
+			List of `n_features`-dimensional data points.
+			Each row corresponds to a single data point.
+
+		init_cores : int, default=5
+			The initial number of Cores (Gaussian components)
+			to fit the data.
+
+		Returns
+		-------
+		interval : tuple, shape (2,)
+			The interval which contains the optimal number of Cores.
+			Interpreted as [min, max).
+
+		bic : tuple, shape (2,)
+			The bic scores corresponding to the interval.
+		"""
+		interval = (1, np.inf)
+		bic = (np.inf, np.inf)
+		i, j = init_cores, init_cores + 1
+		bic_i = self.fit(data, stabilize=False, init_cores=i).bic(data)
+		bic_j = self.fit(data, stabilize=False, init_cores=j).bic(data)
+		if bic_j - bic_i >= 0:
+			bic_1 = self.fit(data, stabilize=False, init_cores=1).bic(data)
+			interval, bic = (1, j), (bic_1, bic_j)
 		else:
-			raise ValueError("Unimplemented initialization method '%s'"
-                             % self.init)
-		for n in range(self.init_cores):
-			mu, sigma, delta = params['mu'][n], params['sigma'][n], params['delta'][n]
-			core = self._initialize_core(mu=mu, sigma=sigma, delta=delta)
-			cores.append(core)
-		self.cores = np.asarray(cores)
-		return self.cores
+			while bic_j - bic_i < 0:
+				j += np.abs(int(bic_j - bic_i)) + 1
+				bic_j = self.fit(data, stabilize=False, init_cores=j).bic(data)
+			interval, bic = (i, j), (bic_i, bic_j)
+		return interval, bic
 
 	def _estimate_parameters(self, data, resp):
 		"""
@@ -286,7 +354,7 @@ class SGMM:
 			Each row corresponds to a single data point.
 
 		resp : array-like, shape (n_samples, n_cores)
-			The unweighted probabilities for each data sample in `data`.
+			The normalized probabilities for each data sample in `data`.
 
 		Returns
 		-------
@@ -302,6 +370,48 @@ class SGMM:
 			sigma[k].flat[::self.dim + 1] += self.reg_covar
 		delta = (delta / len(data))[:,np.newaxis]
 		return {'mu':mu, 'sigma':sigma, 'delta':delta}
+
+	def _initialize(self, data, init_cores):
+		"""
+		Initialize a set of Cores within the data space.
+
+		Parameters
+		----------
+		data : array-like, shape (n_samples, n_features)
+			List of `n_features`-dimensional data points.
+			Each row corresponds to a single data point.
+
+		init_cores : int, default=5
+			The initial number of Cores (Gaussian components)
+			to fit the data.
+
+		Returns
+		-------
+		cores : array, shape (n_cores,)
+			List of Cores within the data space given by `data`.
+		"""
+		data = self._validate_data(data)
+		self._data_range = np.asarray([np.min(data, axis=0), np.max(data, axis=0)])
+		cores = []
+		params = None
+		if self.init == 'kmeans':
+			resp = np.zeros((len(data), init_cores))
+			label = KMeans(n_clusters=init_cores, n_init=1,
+							random_state=self.random_state).fit(data).labels_
+			resp[np.arange(len(data)), label] = 1
+			params = self._estimate_parameters(data, resp)
+		elif self.init == 'random':
+			none = np.full((init_cores,), None)
+			params = {'mu':none, 'sigma':none, 'delta':none}
+		else:
+			raise ValueError("Unimplemented initialization method '%s'"
+                             % self.init)
+		for n in range(init_cores):
+			mu, sigma, delta = params['mu'][n], params['sigma'][n], params['delta'][n]
+			core = self._initialize_core(mu=mu, sigma=sigma, delta=delta)
+			cores.append(core)
+		self.cores = np.asarray(cores)
+		return self.cores
 
 	def _initialize_core(self, mu=None, sigma=None, delta=None):
 		"""
@@ -350,14 +460,14 @@ class SGMM:
 
 		Returns
 		-------
-		b : array, shape (n_cores, n_samples)
+		p : array, shape (n_cores, n_samples)
 			Probabilities of samples under each Core.
 
 		p_norm : array, shape (n_samples,)
-			Probabilities of each sample.
+			Total probabilities of each sample.
 
 		resp : array-like, shape (n_cores, n_samples)
-			The unweighted probabilities for each data sample in `data`.
+			The normalized probabilities for each data sample in `data`.
 		"""
 		data = self._validate_data(data)
 		p_unweighted = []
@@ -383,7 +493,7 @@ class SGMM:
 			Each row corresponds to a single data point.
 
 		resp : array-like, shape (n_cores, n_samples)
-			The unweighted probabilities for each data sample in `data`.
+			The normalized probabilities for each data sample in `data`.
 		"""
 		data = self._validate_data(data)
 		params = self._estimate_parameters(data, resp.T)
@@ -392,38 +502,6 @@ class SGMM:
 			sigma = params['sigma'][i]
 			delta = params['delta'][i]
 			self.cores[i] = Core(mu=mu, sigma=sigma, delta=delta)
-
-	def _stabilize(self, data):
-		"""
-		Estimate the ideal number of Cores at the current step.
-		Change the cores in the model to fit this estimate.
-
-		New cores are seeded randomly within the data space.
-		Cores are removed based on their probability and overlap with
-		other Cores.
-
-		Parameters
-		----------
-		data : array-like, shape (n_samples, n_features)
-			List of `n_features`-dimensional data points.
-			Each row corresponds to a single data point.
-
-		p : array, shape (n_cores, n_samples)
-			Probabilities of samples under each Core.
-		"""
-		p = self._expectation(data)
-		coverage = []
-		for i in range(len(p)):
-			c = np.sum((p[i] - np.sum(np.delete(p, i, axis=0), axis=0)).clip(min=0))
-			coverage.append(c)
-		coverage = np.asarray(coverage)
-		cumulate = np.sum(p, axis=1)
-		growth = np.log(cumulate)*self.growth_rate - \
-					np.log(len(data) / len(self.cores))
-		fitness = self.decay_rate / (coverage + 1e-8) - growth
-		print(np.median(fitness))
-		change = False
-		return change
 
 	def score(self, p_norm):
 		"""
