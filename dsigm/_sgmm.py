@@ -337,10 +337,11 @@ class SGMM:
 			bic_1 = self.fit(data, stabilize=False, init_cores=1).bic(data)
 			interval, bic = (1, j), (bic_1, bic_j)
 		else:
+			min, bic_min = j, bic_j
 			while bic_j - bic_i < 0:
 				j += np.abs(int(bic_j - bic_i)) + 1
 				bic_j = self.fit(data, stabilize=False, init_cores=j).bic(data)
-			interval, bic = (i, j), (bic_i, bic_j)
+			interval, bic = (min, j), (bic_min, bic_j)
 		return interval, bic
 
 	def _estimate_parameters(self, data, resp):
