@@ -452,10 +452,7 @@ class SGMM:
 					(self._data_range[1] - self._data_range[0]) + \
 					self._data_range[0]
 			sigma = make_spd_matrix(self.dim)
-			if len(self.cores):
-				delta = np.ones((1)) / len(self.cores)
-			else:
-				delta = np.ones((1)) / self.init_cores
+			delta = np.ones((1)) / self.init_cores
 			return Core(mu=mu, sigma=sigma, delta=delta)
 		else:
 			raise RuntimeError("Data Range hasn't been set, likely because SGMM hasn't been initialized yet")
