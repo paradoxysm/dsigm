@@ -10,11 +10,11 @@ def read(*paths):
 
 setup(
 	name='dsigm',
-	version='0.3.0',
+	version='0.3.1',
     description='Density-sensitive Self-stabilization of Independent Gaussian Mixtures (DSIGM) Clustering',
     long_description=(read('README.md') + '\n\n'),
 	url='http://github.com/paradoxysm/dsigm',
-	download_url = 'https://github.com/paradoxysm/dsigm/archive/0.3.0.tar.gz',
+	download_url = 'https://github.com/paradoxysm/dsigm/archive/0.3.1.tar.gz',
     author='paradoxysm',
 	author_email='paradoxysm.dev@gmail.com',
     license='BSD-3-Clause',
