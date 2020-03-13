@@ -307,7 +307,8 @@ class SGMM:
 								StabilizationWarning)
 				self.fit(data, stabilize=False, init_cores=interval[min])
 				return self.inertia, self.cores
-		self.fit(data, stabilize=False, init_cores=interval[0])
+		best = 0 if bic[0] <= bic[1] else 1
+		self.fit(data, stabilize=False, init_cores=interval[best])
 		return self.inertia, self.cores
 
 	def _orient_stabilizer(self, data, init_cores):
@@ -335,7 +336,10 @@ class SGMM:
 		"""
 		interval = (1, np.inf)
 		bic = (np.inf, np.inf)
+		ceiling = len(np.unique(data, axis=0))
 		i, j = init_cores, init_cores + 1
+		if j > ceiling:
+			i, j = ceiling - 1, ceiling
 		bic_i = SGMM(stabilize=False, init_cores=i).fit(data).bic(data)
 		bic_j = SGMM(stabilize=False, init_cores=j).fit(data).bic(data)
 		if bic_j - bic_i >= 0:
@@ -345,8 +349,8 @@ class SGMM:
 			min, bic_min = j, bic_j
 			while bic_j - bic_i < 0:
 				inc = int(np.abs(bic_j - bic_i) / (10 * np.log(len(data)))) + 1
-				if j + inc > len(data):
-					j = len(data)
+				if j + inc > ceiling:
+					j = ceiling
 					break
 				else:
 					j += inc
