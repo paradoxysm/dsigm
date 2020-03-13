@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.com/paradoxysm/dsigm.svg?branch=master)](https://travis-ci.com/paradoxysm/dsigm)
 [![codecov](https://codecov.io/gh/paradoxysm/dsigm/branch/master/graph/badge.svg?token=cpaPkUHKah)](https://codecov.io/gh/paradoxysm/dsigm)
+[![GitHub](https://img.shields.io/github/license/paradoxysm/dsigm?color=blue)](https://github.com/paradoxysm/dsigm/blob/master/LICENSE)
 
 ## Overview
 
