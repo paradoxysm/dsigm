@@ -38,7 +38,7 @@ children : array-like, shape (some_cores,), default=[]
 	A list of CoreCluster children in a hierarchical manner.
 ```
 
-## _validate_init(self)
+## _validate_init
 ```python
 CoreCluster._validate_init()
 ```

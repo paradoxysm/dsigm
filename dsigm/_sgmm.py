@@ -259,7 +259,10 @@ class SGMM:
 		with the EM algorithm.
 
 		The method repeatedly converges for various n_cores
-		to pinpoint optimal n_cores.
+		to pinpoint optimal n_cores. It does so by determining
+		a search interval that contains the optimal n_cores and
+		repeatedly narrows the interval until the optimal n_cores
+		is determined.
 
 		Parameters
 		----------

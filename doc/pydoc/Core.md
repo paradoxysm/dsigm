@@ -49,16 +49,16 @@ cluster : CoreCluster, default=None
 	The parent CoreCluster this Core is associated with.
 ```
 
-## _validate_init(self)
+## _validate_init
 ```python
 Core._validate_init()
 ```
 Validate the attributes of the Core.
 If `dim` has not yet been set, set it now.
 
-## pdf(self, data)
+## pdf
 ```python
-Core.pdf(X)
+Core.pdf(data)
 ```
 
 Multivariate normal probability density function.
@@ -75,9 +75,9 @@ pdf : ndarray or scalar
 	Probability density function evaluated at `data`.
 ```
 
-## logpdf(self, data)
+## logpdf
 ```python
-Core.logpdf(X)
+Core.logpdf(data)
 ```
 
 Log of multivariate normal probability density function.
