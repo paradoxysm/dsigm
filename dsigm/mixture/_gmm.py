@@ -8,9 +8,9 @@ import warnings
 from sklearn.datasets import make_spd_matrix
 from sklearn.cluster import KMeans
 
-from ._utils import format_array, create_random_state
-from ._exceptions import ConvergenceWarning, InitializationWarning
-from . import Core
+from .._utils import format_array, create_random_state
+from .._exceptions import ConvergenceWarning, InitializationWarning
+from .. import Core
 
 class GMM:
 	"""

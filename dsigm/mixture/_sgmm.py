@@ -6,8 +6,8 @@
 import numpy as np
 import warnings
 
-from ._exceptions import ConvergenceWarning, StabilizationWarning
-from . import GMM
+from .._exceptions import ConvergenceWarning, StabilizationWarning
+from .. import GMM
 
 class SGMM(GMM):
 	"""
