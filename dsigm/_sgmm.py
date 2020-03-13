@@ -282,39 +282,77 @@ class SGMM:
 		cores : array-like, shape (n_cores,)
 			A list of Cores for this fit trial.
 		"""
+		n_init = self.n_init // 2
 		interval, bic = self._orient_stabilizer(data, init_cores)
 		while interval[1] - interval[0] > 1:
 			midpoint = (interval[0] + interval[1]) // 2
-			bic_m = SGMM(stabilize=False, init_cores=midpoint).fit(data).bic(data)
+			bic_m = SGMM(stabilize=False, n_init=n_init, init_cores=midpoint).fit(data).bic(data)
 			if bic[0] > bic_m and bic_m > bic[1]:
 				interval, bic = (midpoint, interval[1]), (bic_m, bic[1])
 			elif bic[1] > bic_m and bic_m > bic[0]:
 				interval, bic = (interval[0], midpoint), (bic[0], bic_m)
 			elif bic_m <= bic[0] and bic_m <= bic[1]:
-				m0 = (interval[0] + midpoint) // 2
-				if m0 == interval[0]:
-					interval, bic = (midpoint, interval[1]), (bic_m, bic[1])
-					break
-				else:
-					bic_m0 = SGMM(stabilize=False, init_cores=m0).fit(data).bic(data)
-					if bic_m0 < bic_m:
-						interval, bic = (interval[0], midpoint), (bic[0], bic_m)
-						continue
-					m1 = (interval[1] + midpoint) // 2
-					bic_m1 = SGMM(stabilize=False, init_cores=m1).fit(data).bic(data)
-					if bic_m1 < bic_m:
-						interval, bic = (midpoint, interval[1]), (bic_m, bic[1])
-					else:
-						interval, bic = (m0, m1), (bic_m0, bic_m1)
+				interval, bic = self._halve_interval(data, interval, bic,
+									midpoint, bic_m, n_init)
 			else:
 				min = 0 if bic[0] <= bic[1] else 1
 				warnings.warn("Stabilization encountered local maxima",
 								StabilizationWarning)
 				self.fit(data, stabilize=False, init_cores=interval[min])
 				return self.inertia, self.cores
-		best = 0 if bic[0] <= bic[1] else 1
-		self.fit(data, stabilize=False, init_cores=interval[best])
+		self.fit(data, stabilize=False, init_cores=interval[0])
 		return self.inertia, self.cores
+
+	def _halve_interval(self, data, interval, bic, midpoint, bic_m, n_init):
+		"""
+		Halve the interval based on the BIC of the midpoint.
+
+		Parameters
+		----------
+		data : array-like, shape (n_samples, n_features)
+			List of `n_features`-dimensional data points.
+			Each row corresponds to a single data point.
+
+		interval : tuple, shape (2,)
+			The interval which contains the optimal number of Cores.
+			Interpreted as [min, max).
+
+		bic : tuple, shape (2,)
+			The bic scores corresponding to the interval.
+
+		midpoint : int
+			The midpoint of the interval.
+
+		bic_m : float
+			The bic score corresponding to the midpoint.
+
+		n_init : int, default=10
+			Number of times the SGMM  will be run with different
+	        Core seeds. The final results will be the best output of
+	        n_init consecutive runs in terms of inertia.			
+
+		Returns
+		-------
+		interval : tuple, shape (2,)
+			The interval which contains the optimal number of Cores.
+			Interpreted as [min, max).
+
+		bic : tuple, shape (2,)
+			The bic scores corresponding to the interval.
+		"""
+		m0 = (interval[0] + midpoint) // 2
+		if m0 == interval[0]:
+			return (midpoint, interval[1]), (bic_m, bic[1])
+		else:
+			bic_m0 = SGMM(stabilize=False, n_init=n_init, init_cores=m0).fit(data).bic(data)
+			if bic_m0 < bic_m:
+				return (interval[0], midpoint), (bic[0], bic_m)
+			m1 = (interval[1] + midpoint) // 2
+			bic_m1 = SGMM(stabilize=False, n_init=n_init, init_cores=m1).fit(data).bic(data)
+			if bic_m1 < bic_m:
+				return (midpoint, interval[1]), (bic_m, bic[1])
+			else:
+				return (m0, m1), (bic_m0, bic_m1)
 
 	def _orient_stabilizer(self, data, init_cores):
 		"""
@@ -342,24 +380,27 @@ class SGMM:
 		interval = (1, np.inf)
 		bic = (np.inf, np.inf)
 		ceiling = len(np.unique(data, axis=0))
+		n_init = self.n_init // 2
 		i, j = init_cores, init_cores + 1
 		if j > ceiling:
 			i, j = ceiling - 1, ceiling
-		bic_i = SGMM(stabilize=False, init_cores=i).fit(data).bic(data)
-		bic_j = SGMM(stabilize=False, init_cores=j).fit(data).bic(data)
+		bic_i = SGMM(stabilize=False, n_init=n_init, init_cores=i).fit(data).bic(data)
+		bic_j = SGMM(stabilize=False, n_init=n_init, init_cores=j).fit(data).bic(data)
 		if bic_j - bic_i >= 0:
-			bic_1 = SGMM(stabilize=False, init_cores=1).fit(data).bic(data)
+			bic_1 = SGMM(stabilize=False, n_init=n_init, init_cores=1).fit(data).bic(data)
 			interval, bic = (1, j), (bic_1, bic_j)
 		else:
 			min, bic_min = j, bic_j
-			while bic_j - bic_i < 0:
+			bic_threshold = [bic_i]
+			while bic_j - np.mean(bic_threshold) < 0:
+				bic_threshold.append(bic_j)
 				inc = int(np.abs(bic_j - bic_i) / (10 * np.log(len(data)))) + 1
 				if j + inc > ceiling:
 					j = ceiling
 					break
 				else:
 					j += inc
-					bic_j = SGMM(stabilize=False, init_cores=j).fit(data).bic(data)
+					bic_j = SGMM(stabilize=False, n_init=n_init, init_cores=j).fit(data).bic(data)
 			interval, bic = (min, j), (bic_min, bic_j)
 		return interval, bic
 
