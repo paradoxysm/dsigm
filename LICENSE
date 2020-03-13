@@ -27,14 +27,3 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-In addition, the following source code carries source code,
-in verbatim or modified, from the following sources
-
-1. SGMM._estimate_parameters: BSD 3-Clause License, sklearn
-2. SGMM.fit: BSD 3-Clause License, sklearn
-3. SGMM.predict: BSD 3-Clause License, sklearn
-4. SGMM.bic: BSD 3-Clause License, sklearn
-5. SGMM.aic: BSD 3-Clause License, sklearn
-6. SGMM._n_parameters: BSD 3-Clause License, sklearn
-7. SGMM._initialize: BSD 3-Clause License, sklearn
