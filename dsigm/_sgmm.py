@@ -293,14 +293,19 @@ class SGMM:
 			elif bic_m <= bic[0] and bic_m <= bic[1]:
 				m0 = (interval[0] + midpoint) // 2
 				if m0 == interval[0]:
-					interval = (m0, interval[1])
+					interval, bic = (midpoint, interval[1]), (bic_m, bic[1])
 					break
 				else:
 					bic_m0 = SGMM(stabilize=False, init_cores=m0).fit(data).bic(data)
 					if bic_m0 < bic_m:
 						interval, bic = (interval[0], midpoint), (bic[0], bic_m)
-					else:
+						continue
+					m1 = (interval[1] + midpoint) // 2
+					bic_m1 = SGMM(stabilize=False, init_cores=m1).fit(data).bic(data)
+					if bic_m1 < bic_m:
 						interval, bic = (midpoint, interval[1]), (bic_m, bic[1])
+					else:
+						interval, bic = (m0, m1), (bic_m0, bic_m1)
 			else:
 				min = 0 if bic[0] <= bic[1] else 1
 				warnings.warn("Stabilization encountered local maxima",
