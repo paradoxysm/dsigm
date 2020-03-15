@@ -192,7 +192,7 @@ class SGMM(GMM):
 
 		interval : tuple, shape (2,)
 			The interval which contains the optimal number of Cores.
-			Interpreted as [min, max).
+			Interpreted as [min, max].
 
 		abic : tuple, shape (2,)
 			The abic scores corresponding to the interval.
@@ -233,7 +233,7 @@ class SGMM(GMM):
 
 		interval : tuple, shape (2,)
 			The interval which contains the optimal number of Cores.
-			Interpreted as [min, max).
+			Interpreted as [min, max].
 
 		abic : tuple, shape (2,)
 			The abic scores corresponding to the interval.
@@ -253,7 +253,7 @@ class SGMM(GMM):
 		-------
 		interval : tuple, shape (2,)
 			The interval which contains the optimal number of Cores.
-			Interpreted as [min, max).
+			Interpreted as [min, max].
 
 		abic : tuple, shape (2,)
 			The abic scores corresponding to the interval.
@@ -290,7 +290,7 @@ class SGMM(GMM):
 		-------
 		interval : tuple, shape (2,)
 			The interval which contains the optimal number of Cores.
-			Interpreted as [min, max).
+			Interpreted as [min, max].
 
 		abic : tuple, shape (2,)
 			The abic scores corresponding to the interval.
