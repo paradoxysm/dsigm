@@ -169,21 +169,56 @@ class SGMM(GMM):
 			elif (abic[1] > abic_m and abic_m > abic[0]) or \
 					(abic[1] >= abic_m and abic_m > abic[1]):
 				interval, abic = (interval[0], midpoint), (abic[0], abic_m)
-			elif abic_m <= abic[0] and abic_m <= bic[1]:
+			elif abic_m <= abic[0] and abic_m <= abic[1]:
 				interval, abic = self._halve_interval(data, interval, abic,
 									midpoint, abic_m, n_init)
 			else:
-				if abic[1] >= abic[0]:
-					interval_l = interval[1] - 1
-					abic_l = GMM(n_init=n_init, init_cores=interval_l).fit(data)._abic(data)
-					interval, abic = (interval[0], interval_l), (bic[0], abic_l)
-				else:
-					interval_l = interval[1] + 1
-					abic_l = GMM(n_init=n_init, init_cores=interval_l).fit(data)._abic(data)
-					interval, abic = (interval_l, interval[1]), (abic_l, abic[1])
+				interval, abic = self._truncate_interval(data, interval, abic, n_init)
 		best = 0 if abic[0] < abic[1] else 1
 		self.fit(data, stabilize=False, init_cores=interval[best])
 		return self.inertia, self.cores
+
+	def _truncate_interval(self, data, interval, abic, n_init):
+		"""
+		Truncate the interval by reducing the upper or lower limit
+		based on which has the higher BIC/AIC (ABIC).
+
+		Parameters
+		----------
+		data : array-like, shape (n_samples, n_features)
+			List of `n_features`-dimensional data points.
+			Each row corresponds to a single data point.
+
+		interval : tuple, shape (2,)
+			The interval which contains the optimal number of Cores.
+			Interpreted as [min, max).
+
+		abic : tuple, shape (2,)
+			The abic scores corresponding to the interval.
+
+		n_init : int, default=10
+			Number of times the SGMM  will be run with different
+	        Core seeds. The final results will be the best output of
+	        n_init consecutive runs in terms of inertia.
+
+		Returns
+		-------
+		interval : tuple, shape (2,)
+			The interval which contains the optimal number of Cores.
+			Interpreted as [min, max).
+
+		abic : tuple, shape (2,)
+			The abic scores corresponding to the interval.
+		"""
+		if abic[1] >= abic[0]:
+			interval_l = interval[1] - 1
+			abic_l = GMM(n_init=n_init, init_cores=interval_l).fit(data)._abic(data)
+			interval, abic = (interval[0], interval_l), (abic[0], abic_l)
+		else:
+			interval_l = interval[1] + 1
+			abic_l = GMM(n_init=n_init, init_cores=interval_l).fit(data)._abic(data)
+			interval, abic = (interval_l, interval[1]), (abic_l, abic[1])
+		return interval, abic
 
 	def _halve_interval(self, data, interval, abic, midpoint, abic_m, n_init):
 		"""
