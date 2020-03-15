@@ -123,7 +123,7 @@ def test_score_abic_parameters(data, n_parameters):
 	p, p_norm, resp = gmm._expectation(data)
 	gmm.score(p_norm)
 	assert gmm._n_parameters() == n_parameters
-	gmm.abic(data)
+	gmm._abic(data)
 
 @pytest.mark.parametrize("data", [
 	([0,1,3,4,1,2]),
