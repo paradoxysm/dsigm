@@ -448,6 +448,25 @@ class GMM:
 		penalty = 2 * self._n_parameters()
 		return fit + penalty
 
+	def _abic(self, data):
+		"""
+		Calculate the average of the AIC and BIC for
+		the current model on the input `data`.
+
+		Parameters
+		----------
+		data : array-like, shape (n_samples, n_features)
+				List of `n_features`-dimensional data points.
+				Each row corresponds to a single data point.
+
+		-------
+		abic : float
+				Mean of Akaike Information Criterion
+				and Bayesian Information Criterion.
+				The lower the better.
+		"""
+		return np.mean([self.bic(data), self.aic(data)])
+
 	def _n_parameters(self):
 		"""
 		Return the number of free parameters in the model.
