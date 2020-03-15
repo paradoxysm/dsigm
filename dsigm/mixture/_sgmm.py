@@ -7,7 +7,7 @@ import numpy as np
 import warnings
 
 from .._exceptions import ConvergenceWarning, StabilizationWarning
-from .. import GMM
+from . import GMM
 
 class SGMM(GMM):
 	"""
@@ -75,7 +75,7 @@ class SGMM(GMM):
 	def __init__(self, init_cores=5, init='kmeans',
 					stabilize=True, n_init=10, max_iter=100,
 					tol=1e-3, reg_covar=1e-6, random_state=None):
-		super.__init__(init_cores=5, init='kmeans',n_init=10, max_iter=100,
+		super().__init__(init_cores=5, init='kmeans',n_init=10, max_iter=100,
 						tol=1e-3, reg_covar=1e-6, random_state=None)
 		self.stabilize = stabilize
 
@@ -159,29 +159,35 @@ class SGMM(GMM):
 			A list of Cores for this fit trial.
 		"""
 		n_init = self.n_init // 2
-		interval, bic = self._orient_stabilizer(data, init_cores)
+		interval, abic = self._orient_stabilizer(data, init_cores)
 		while interval[1] - interval[0] > 1:
 			midpoint = (interval[0] + interval[1]) // 2
-			bic_m = SGMM(stabilize=False, n_init=n_init, init_cores=midpoint).fit(data).bic(data)
-			if bic[0] > bic_m and bic_m > bic[1]:
-				interval, bic = (midpoint, interval[1]), (bic_m, bic[1])
-			elif bic[1] > bic_m and bic_m > bic[0]:
-				interval, bic = (interval[0], midpoint), (bic[0], bic_m)
-			elif bic_m <= bic[0] and bic_m <= bic[1]:
-				interval, bic = self._halve_interval(data, interval, bic,
-									midpoint, bic_m, n_init)
+			abic_m = GMM(n_init=n_init, init_cores=midpoint).fit(data)._abic(data)
+			if (abic[0] > abic_m and abic_m >= abic[1]) or \
+					(abic[0] >= abic_m and abic_m > abic[1]):
+				interval, abic = (midpoint, interval[1]), (abic_m, abic[1])
+			elif (abic[1] > abic_m and abic_m > abic[0]) or \
+					(abic[1] >= abic_m and abic_m > abic[1]):
+				interval, abic = (interval[0], midpoint), (abic[0], abic_m)
+			elif abic_m <= abic[0] and abic_m <= bic[1]:
+				interval, abic = self._halve_interval(data, interval, abic,
+									midpoint, abic_m, n_init)
 			else:
-				min = 0 if bic[0] <= bic[1] else 1
-				warnings.warn("Stabilization encountered local maxima",
-								StabilizationWarning)
-				self.fit(data, stabilize=False, init_cores=interval[min])
-				return self.inertia, self.cores
-		self.fit(data, stabilize=False, init_cores=interval[0])
+				if abic[1] >= abic[0]:
+					interval_l = interval[1] - 1
+					abic_l = GMM(n_init=n_init, init_cores=interval_l).fit(data)._abic(data)
+					interval, abic = (interval[0], interval_l), (bic[0], abic_l)
+				else:
+					interval_l = interval[1] + 1
+					abic_l = GMM(n_init=n_init, init_cores=interval_l).fit(data)._abic(data)
+					interval, abic = (interval_l, interval[1]), (abic_l, abic[1])
+		best = 0 if abic[0] < abic[1] else 1
+		self.fit(data, stabilize=False, init_cores=interval[best])
 		return self.inertia, self.cores
 
-	def _halve_interval(self, data, interval, bic, midpoint, bic_m, n_init):
+	def _halve_interval(self, data, interval, abic, midpoint, abic_m, n_init):
 		"""
-		Halve the interval based on the BIC of the midpoint.
+		Halve the interval based on the BIC/AIC (ABIC) of the midpoint.
 
 		Parameters
 		----------
@@ -193,14 +199,14 @@ class SGMM(GMM):
 			The interval which contains the optimal number of Cores.
 			Interpreted as [min, max).
 
-		bic : tuple, shape (2,)
-			The bic scores corresponding to the interval.
+		abic : tuple, shape (2,)
+			The abic scores corresponding to the interval.
 
 		midpoint : int
 			The midpoint of the interval.
 
-		bic_m : float
-			The bic score corresponding to the midpoint.
+		abic_m : float
+			The abic score corresponding to the midpoint.
 
 		n_init : int, default=10
 			Number of times the SGMM  will be run with different
@@ -213,22 +219,22 @@ class SGMM(GMM):
 			The interval which contains the optimal number of Cores.
 			Interpreted as [min, max).
 
-		bic : tuple, shape (2,)
-			The bic scores corresponding to the interval.
+		abic : tuple, shape (2,)
+			The abic scores corresponding to the interval.
 		"""
 		m0 = (interval[0] + midpoint) // 2
 		if m0 == interval[0]:
-			return (midpoint, interval[1]), (bic_m, bic[1])
+			return (midpoint, interval[1]), (abic_m, abic[1])
 		else:
-			bic_m0 = SGMM(stabilize=False, n_init=n_init, init_cores=m0).fit(data).bic(data)
-			if bic_m0 < bic_m:
-				return (interval[0], midpoint), (bic[0], bic_m)
+			abic_m0 = GMM(n_init=n_init, init_cores=m0).fit(data)._abic(data)
+			if abic_m0 < abic_m:
+				return (interval[0], midpoint), (abic[0], abic_m)
 			m1 = (interval[1] + midpoint) // 2
-			bic_m1 = SGMM(stabilize=False, n_init=n_init, init_cores=m1).fit(data).bic(data)
-			if bic_m1 < bic_m:
-				return (midpoint, interval[1]), (bic_m, bic[1])
+			abic_m1 = GMM(n_init=n_init, init_cores=m1).fit(data)._abic(data)
+			if abic_m1 < abic_m:
+				return (midpoint, interval[1]), (abic_m, abic[1])
 			else:
-				return (m0, m1), (bic_m0, bic_m1)
+				return (m0, m1), (abic_m0, abic_m1)
 
 	def _orient_stabilizer(self, data, init_cores):
 		"""
@@ -250,32 +256,32 @@ class SGMM(GMM):
 			The interval which contains the optimal number of Cores.
 			Interpreted as [min, max).
 
-		bic : tuple, shape (2,)
-			The bic scores corresponding to the interval.
+		abic : tuple, shape (2,)
+			The abic scores corresponding to the interval.
 		"""
 		interval = (1, np.inf)
-		bic = (np.inf, np.inf)
+		abic = (np.inf, np.inf)
 		ceiling = len(np.unique(data, axis=0))
 		n_init = self.n_init // 2
 		i, j = init_cores, init_cores + 1
 		if j > ceiling:
 			i, j = ceiling - 1, ceiling
-		bic_i = SGMM(stabilize=False, n_init=n_init, init_cores=i).fit(data).bic(data)
-		bic_j = SGMM(stabilize=False, n_init=n_init, init_cores=j).fit(data).bic(data)
-		if bic_j - bic_i >= 0:
-			bic_1 = SGMM(stabilize=False, n_init=n_init, init_cores=1).fit(data).bic(data)
-			interval, bic = (1, j), (bic_1, bic_j)
+		abic_i = GMM(n_init=n_init, init_cores=i).fit(data)._abic(data)
+		abic_j = GMM(n_init=n_init, init_cores=j).fit(data)._abic(data)
+		if abic_j - abic_i >= 0:
+			abic_1 = GMM(n_init=n_init, init_cores=1).fit(data)._abic(data)
+			interval, abic = (1, j), (abic_1, abic_j)
 		else:
-			min, bic_min = j, bic_j
-			bic_threshold = [bic_i]
-			while bic_j - np.mean(bic_threshold) < 0:
-				bic_threshold.append(bic_j)
-				inc = int(np.abs(bic_j - bic_i) / (10 * np.log(len(data)))) + 1
+			min, abic_min = j, abic_j
+			abic_threshold = [abic_i]
+			while abic_j - np.mean(abic_threshold) < 0:
+				abic_threshold.append(abic_j)
+				inc = int(np.abs(abic_j - abic_i) / (10 * np.log(len(data)))) + 1
 				if j + inc > ceiling:
 					j = ceiling
 					break
 				else:
 					j += inc
-					bic_j = SGMM(stabilize=False, n_init=n_init, init_cores=j).fit(data).bic(data)
-			interval, bic = (min, j), (bic_min, bic_j)
-		return interval, bic
+					abic_j = GMM(n_init=n_init, init_cores=j).fit(data)._abic(data)
+			interval, abic = (min, j), (abic_min, abic_j)
+		return interval, abic
