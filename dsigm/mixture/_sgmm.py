@@ -75,8 +75,9 @@ class SGMM(GMM):
 	def __init__(self, init_cores=5, init='kmeans',
 					stabilize=True, n_init=10, max_iter=100,
 					tol=1e-3, reg_covar=1e-6, random_state=None):
-		super().__init__(init_cores=5, init='kmeans',n_init=10, max_iter=100,
-						tol=1e-3, reg_covar=1e-6, random_state=None)
+		super().__init__(init_cores=init_cores, init=init, n_init=n_init,
+		 					max_iter=max_iter, tol=tol,
+							reg_covar=reg_covar, random_state=random_state)
 		self.stabilize = stabilize
 
 	def fit(self, data, stabilize=None, init_cores=None):
