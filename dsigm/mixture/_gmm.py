@@ -30,12 +30,12 @@ class GMM:
             'random' : responsibilities are initialized randomly.
 
 	n_init : int, default=10
-		Number of times the SGMM  will be run with different
+		Number of times the GMM  will be run with different
         Core seeds. The final results will be the best output of
         n_init consecutive runs in terms of inertia.
 
 	max_iter : int, default=100
-		Maximum number of iterations of the SGMM for a
+		Maximum number of iterations of the GMM for a
         single run.
 
 	tol : float, default=1e-3
@@ -124,7 +124,7 @@ class GMM:
 
 		Returns
 		-------
-		self : SGMM
+		self : GMM
 			Itself, now updated with fitted parameters.
 		"""
 		data = self._validate_data(data)
@@ -321,7 +321,7 @@ class GMM:
 			delta = np.ones((1)) / self.init_cores
 			return Core(mu=mu, sigma=sigma, delta=delta)
 		else:
-			raise RuntimeError("Data Range hasn't been set, likely because SGMM hasn't been initialized yet")
+			raise RuntimeError("Data Range hasn't been set, likely because GMM hasn't been initialized yet")
 
 	def _expectation(self, data):
 		"""
@@ -437,7 +437,7 @@ class GMM:
 
 	def abic(self, data, bic_weight=0.5):
 		"""
-		Calculate a weighted average of the AIC and BIC for
+		Weighted composite of the AIC and BIC for
 		the current model on the input `data`.
 
 		Parameters
@@ -447,7 +447,7 @@ class GMM:
 			Each row corresponds to a single data point.
 
 		bic_weight : float, default=0.5
-			A float withn [0., 1.] that determines the
+			A float within [0., 1.] that determines the
 			weighting of BIC scores to AIC scores in
 			calculating the ABIC composite.
 

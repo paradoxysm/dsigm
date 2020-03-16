@@ -31,13 +31,13 @@ class SGMM(GMM):
             'random' : responsibilities are initialized randomly.
 
 	stabilize : float or None, default=0.5
-		A float withn [0., 1.] that determines the weighting of
+		A float within [0., 1.] that determines the weighting of
 		BIC scores to AIC scores in calculating the ABIC composite.
 		Also acts to enable stabilization. If None, stabilization
 		is disabled.
 
 	n_stabilize : int, default=5
-		Number of times the SGMM will run indvidual fittings during
+		Number of times the SGMM will run individual fittings during
 		the stabilization process.
 
 	n_init : int, default=10

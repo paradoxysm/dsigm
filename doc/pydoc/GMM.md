@@ -1,6 +1,6 @@
-# dsigm.SGMM
+# dsigm.GMM
 
-The Self-stabilizing Gaussian Mixture Model (SGMM) is a modified Gaussian Mixture Model that is capable of automatically converging to the optimal number of components during fitting. The SGMM refines the number of components by narrowing a search interval through the Bayesian Information Criterion until converged.
+The Gaussian Mixture Model (GMM) is based on `sklearn.mixture.GaussianMixture` and is used to model data distributions as a mixture of *k* gaussian components.
 
 **Attributes**
 ```
@@ -18,23 +18,13 @@ init : {'random', 'kmeans'}, default='kmeans'
 		'kmeans' : responsibilities are initialized using kmeans.
 		'random' : responsibilities are initialized randomly.
 
-stabilize : float or None, default=0.5
-	A float within [0., 1.] that determines the weighting of
-	BIC scores to AIC scores in calculating the ABIC composite.
-	Also acts to enable stabilization. If None, stabilization
-	is disabled.
-
-n_stabilize : int, default=5
-	Number of times the SGMM will run individual fittings during
-	the stabilization process.
-
 n_init : int, default=10
-	Number of times the SGMM  will be run with different
+	Number of times the GMM  will be run with different
 	Core seeds. The final results will be the best output of
 	n_init consecutive runs in terms of inertia.
 
 max_iter : int, default=100
-	Maximum number of iterations of the SGMM for a
+	Maximum number of iterations of the GMM for a
 	single run.
 
 tol : float, default=1e-3
@@ -63,21 +53,31 @@ _data_range : array-like, shape (2, n_features)
 ```
 
 **Methods**
-[`__init__`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/SGMM.md#__init__) : Instantiates an SGMM.
-[`fit`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/SGMM.md#fit) : Fit the model to some given data.
+[`__init__`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#__init__) : Instantiates an GMM.
+[`get_params`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#get_params) : Get the model parameters of the GMM.
+[`fit`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#fit) : Fit the model to some given data.
+[`predict`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#predict) : Label some given data to the best fitting component.
+[`score`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#score) : Calculate the per-sample log-likelihood of the model.
+[`bic`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#bic) : Calculate Bayesian Information Criterion.
+[`aic`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#aic) : Calculate Akaike Information Criterion.
+[`abic`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#abic) : Calculate a composite of the Akaike and Bayesian Information Criteria.
 
 **Private Methods**
-[`_fit_stabilize`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/SGMM.md#_fit_stabilize) : A single attempt at fitting with stabilization.
-[`_truncate_interval`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/SGMM.md#_truncate_interval) : Truncates the search interval for stabilization.
-[`_halve_interval`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/SGMM.md#_halve_interval) : Halves the search interval for stabilization.
-[`_orient_stabilizer`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/SGMM.md#_orient_stabilizer) : Initializes the search interval for stabilization.
+[`_validate_data`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#_validate_data) : Validate the given data to the correct format.
+[`_fit_single`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#_fit_single) : A single attempt at fitting with no stabilization.
+[`_estimate_parameters`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#_estimate_parameters) : Estimate new model parameters given posterior probabilities.
+[`_initialize`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#_initialize) : Initialize a set of components for the model.
+[`_initialize_core`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#_initialize_core) : Initialize a single component for the model.
+[`_expectation`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#_expectation) : Conduct the expectation step of the EM Algorithm.
+[`_maximization`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#_maximization) : Conduct the maximization step of the EM Algorithm.
+[`_n_parameters`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/GMM.md#_n_parameters) : Calculate the number of free parameters of the model.
 
 ## __init__
 ```python
-SGMM(self, init_cores=5, init='kmeans', stabilize=0.5, n_stabilize=5, n_init=10, max_iter=100, tol=1e-3, reg_covar=1e-6, random_state=None)
+GMM(self, init_cores=5, init='kmeans', n_init=10, max_iter=100, tol=1e-3, reg_covar=1e-6, random_state=None)
 ```
 
-A Self-stabilizing Gaussian Mixture Model.
+A Gaussian Mixture Model.
 
 **Parameters**
 ```
@@ -91,23 +91,13 @@ init : {'random', 'kmeans'}, default='kmeans'
 		'kmeans' : responsibilities are initialized using kmeans.
 		'random' : responsibilities are initialized randomly.
 
-stabilize : float or None, default=0.5
-	A float within [0., 1.] that determines the weighting of
-	BIC scores to AIC scores in calculating the ABIC composite.
-	Also acts to enable stabilization. If None, stabilization
-	is disabled.
-
-n_stabilize : int, default=5
-	Number of times the SGMM will run individual fittings during
-	the stabilization process.
-
 n_init : int, default=10
-	Number of times the SGMM  will be run with different
+	Number of times the GMM  will be run with different
 	Core seeds. The final results will be the best output of
 	n_init consecutive runs in terms of inertia.
 
 max_iter : int, default=100
-	Maximum number of iterations of the SGMM for a
+	Maximum number of iterations of the GMM for a
 	single run.
 
 tol : float, default=1e-3
@@ -123,9 +113,27 @@ random_state : None or int or RandomState, default=None
 	an int to make the randomness deterministic.
 ```
 
+## get_params
+```python
+GMM.get_params()
+```
+Return the parameters of the model.
+
+**Returns**
+```
+mu : array-like, shape (n_cores, n_features)
+	List of the means for all Cores in the model.
+
+sigma : array-like, shape (n_cores, n_features, n_features)
+	List of the covariances for all Cores in the model.
+
+delta : array-like, shape (n_cores, 1)
+	List of the weights for all Cores in the model.
+```
+
 ## fit
 ```python
-SGMM.fit(data)
+GMM.fit(data)
 ```
 Estimate model parameters with the EM algorithm.
 
@@ -145,22 +153,147 @@ data : array-like, shape (n_samples, n_features)
 
 **Returns**
 ```
-self : SGMM
+self : GMM
 	Itself, now updated with fitted parameters.
 ```
 
-## _fit_stabilize
+## predict
 ```python
-SGMM._fit_stabilize(data)
+GMM.predict(data)
+```
+Predict the labels for `data` using the model.
+
+**Parameters**
+```
+data : array-like, shape (n_samples, n_features)
+	List of `n_features`-dimensional data points.
+	Each row corresponds to a single data point.
+```
+
+**Returns**
+```
+labels : array, shape (n_samples,)
+	Component labels.
+```
+
+## score
+```python
+GMM.score(data)
+```
+Compute the per-sample average log-likelihood.
+
+**Parameters**
+```
+p_norm : array-like, shape (n_samples,)
+	Probabilities of samples.
+```
+
+**Returns**
+```
+log_likelihood : float
+	Log likelihood of the model.
+```
+
+## bic
+```python
+GMM.bic(data)
+```
+Bayesian Information Criterion for the current model
+on the input `data`.
+
+**Parameters**
+```
+data : array-like, shape (n_samples, n_features)
+	List of `n_features`-dimensional data points.
+	Each row corresponds to a single data point.
+```
+
+**Returns**
+```
+bic : float
+	Bayesian Information Criterion. The lower the better.
+```
+
+## aic
+```python
+GMM.aic(data)
+```
+Akaike Information Criterion for the current model
+on the input `data`.
+
+**Parameters**
+```
+data : array-like, shape (n_samples, n_features)
+	List of `n_features`-dimensional data points.
+	Each row corresponds to a single data point.
+```
+
+**Returns**
+```
+aic : float
+	Akaike Information Criterion. The lower the better.
+```
+
+## abic
+```python
+GMM.abic(data, bic_weight=0.5)
+```
+Weighted composite of the AIC and BIC for
+the current model on the input `data`.
+
+**Parameters**
+```
+data : array-like, shape (n_samples, n_features)
+	List of `n_features`-dimensional data points.
+	Each row corresponds to a single data point.
+
+bic_weight : float, default=0.5
+	A float within [0., 1.] that determines the
+	weighting of BIC scores to AIC scores in
+	calculating the ABIC composite.
+```
+
+**Returns**
+```
+abic : float
+	Weighted average of Akaike Information Criterion
+	and Bayesian Information Criterion.
+	The lower the better.
+```
+
+## _validate_data
+```python
+GMM._validate_data(data)
+```
+Validate and format the given `data`.
+Ensure the data matches the model's dimensionality.
+If the model has yet to set a dimensionality, set it
+to match the dimensionality of `data`.
+
+**Parameters**
+```
+data : array-like, shape (n_samples, n_features)
+	List of `n_features`-dimensional data points.
+	Each row corresponds to a single data point.
+```
+
+**Returns**
+```
+formatted_data : array-like, shape (n_samples, n_features)
+	List of `n_features`-dimensional data points.
+	Each row corresponds to a single data point.
+```
+
+## _fit_single
+```python
+GMM._fit_single(data)
 ```
 A single attempt to estimate model parameters
 with the EM algorithm.
 
-The method repeatedly converges for various n_cores
-to pinpoint optimal n_cores. It does so by determining
-a search interval that contains the optimal n_cores and
-repeatedly narrows the interval until the optimal n_cores
-is determined.
+The method iterates between E-step and M-step for
+`max_iter` times until the change of likelihood or lower bound
+is less than `tol`.
 
 **Parameters**
 ```
@@ -178,101 +311,11 @@ cores : array-like, shape (n_cores,)
 	A list of Cores for this fit trial.
 ```
 
-## _truncate_interval
-```python
-SGMM._truncate_interval(data, interval, abic)
-```
-Truncate the interval by reducing the upper or lower limit
-based on which has the higher BIC/AIC (ABIC).
-
-**Parameters**
-```
-data : array-like, shape (n_samples, n_features)
-	List of `n_features`-dimensional data points.
-	Each row corresponds to a single data point.
-
-interval : tuple, shape (2,)
-	The interval which contains the optimal number of Cores.
-	Interpreted as [min, max].
-
-abic : tuple, shape (2,)
-	The abic scores corresponding to the interval.
-```
-
-**Returns**
-```
-interval : tuple, shape (2,)
-	The interval which contains the optimal number of Cores.
-	Interpreted as [min, max).
-
-abic : tuple, shape (2,)
-	The abic scores corresponding to the interval.
-```
-
-## _halve_interval
-```python
-SGMM._halve_interval(data, interval, abic, midpoint, abic_m)
-```
-Halve the interval based on the BIC/AIC (ABIC) of the midpoint.
-
-**Parameters**
-```
-data : array-like, shape (n_samples, n_features)
-	List of `n_features`-dimensional data points.
-	Each row corresponds to a single data point.
-
-interval : tuple, shape (2,)
-	The interval which contains the optimal number of Cores.
-	Interpreted as [min, max].
-
-abic : tuple, shape (2,)
-	The abic scores corresponding to the interval.
-
-midpoint : int
-	The midpoint of the interval.
-
-abic_m : float
-	The abic score corresponding to the midpoint.
-```
-
-**Returns**
-```
-interval : tuple, shape (2,)
-	The interval which contains the optimal number of Cores.
-	Interpreted as [min, max].
-
-abic : tuple, shape (2,)
-	The abic scores corresponding to the interval.
-```
-
-## _orient_stabilizer
-```python
-SGMM._orient_stabilizer(data)
-```
-Orient the initial interval for the stabilizer.
-
-**Parameters**
-```
-data : array-like, shape (n_samples, n_features)
-	List of `n_features`-dimensional data points.
-	Each row corresponds to a single data point.
-```
-
-**Returns**
-```
-interval : tuple, shape (2,)
-	The interval which contains the optimal number of Cores.
-	Interpreted as [min, max).
-
-bic : tuple, shape (2,)
-	The bic scores corresponding to the interval.
-```
-
 ## _estimate_parameters
 ```python
-SGMM._estimate_parameters(data, resp, init_cores)
+GMM._estimate_parameters(data, resp)
 ```
-Initialize model parameters.
+Estimate model parameters.
 
 **Parameters**
 ```
@@ -282,10 +325,6 @@ data : array-like, shape (n_samples, n_features)
 
 resp : array-like, shape (n_samples, n_cores)
 	The normalized probabilities for each data sample in `data`.
-
-init_cores : int, default=5
-	The initial number of Cores (Gaussian components)
-	to fit the data.
 ```
 
 **Returns**
@@ -296,7 +335,7 @@ params : dict
 
 ## _initialize
 ```python
-SGMM._initialize(data, init_cores)
+GMM._initialize(data)
 ```
 Initialize a set of Cores within the data space.
 
@@ -305,10 +344,6 @@ Initialize a set of Cores within the data space.
 data : array-like, shape (n_samples, n_features)
 	List of `n_features`-dimensional data points.
 	Each row corresponds to a single data point.
-
-init_cores : int, default=5
-	The initial number of Cores (Gaussian components)
-	to fit the data.
 ```
 
 **Returns**
@@ -319,7 +354,7 @@ cores : array, shape (n_cores,)
 
 ## _initialize_core
 ```python
-SGMM._initialize_core(mu=None, sigma=None, delta=None)
+GMM._initialize_core(mu=None, sigma=None, delta=None)
 ```
 Initialize a Core within the data space.
 
@@ -343,7 +378,7 @@ core : Core
 
 ## _expectation
 ```python
-SGMM._expectation(data)
+GMM._expectation(data)
 ```
 Conduct the expectation step.
 
@@ -368,7 +403,7 @@ resp : array-like, shape (n_cores, n_samples)
 
 ## _maximization
 ```python
-SGMM._maximization(data, resp)
+GMM._maximization(data, resp)
 ```
 Conduct the maximization step.
 
@@ -384,7 +419,7 @@ resp : array-like, shape (n_cores, n_samples)
 
 ## _n_parameters
 ```python
-SGMM._n_parameters()
+GMM._n_parameters()
 ```
 Return the number of free parameters in the model.
 
