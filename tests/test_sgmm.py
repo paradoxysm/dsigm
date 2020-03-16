@@ -22,27 +22,27 @@ SGMM
 
 def test_orient_stabilizer(data, init_cores):
 	sgmm = SGMM(init_cores=init_cores)
-	sgmm._orient_stabilizer(data, init_cores)
+	sgmm._orient_stabilizer(data)
 
-@pytest.mark.parametrize("data, interval, abic, midpoint, abic_m, n_init", [
-	([0,1,3,4,1,2,2,-1,2.5], (1,3), (250, 600), 2, 300, 5),
-	([[1,0,0],[1,1,1],[0,1,0],[-1,1,1],[0,0,1],[2,0,-1],[1.5,0,0.5]], (1,3), (250, 600), 2, 300, 5),
-	([[0,21,3],[2,4,3],[34,3,2],[2,5,1],[1,6,3],[23,12,5],[2,6,9]], (1,10), (250, 600), 5, 300, 5),
+@pytest.mark.parametrize("data, interval, abic, midpoint, abic_m", [
+	([0,1,3,4,1,2,2,-1,2.5], (1,3), (250, 600), 2, 300),
+	([[1,0,0],[1,1,1],[0,1,0],[-1,1,1],[0,0,1],[2,0,-1],[1.5,0,0.5]], (1,3), (250, 600), 2, 300),
+	([[0,21,3],[2,4,3],[34,3,2],[2,5,1],[1,6,3],[23,12,5],[2,6,9]], (1,10), (250, 600), 5, 300),
 ])
 
-def test_halve_interval(data, interval, abic, midpoint, abic_m, n_init):
+def test_halve_interval(data, interval, abic, midpoint, abic_m):
 	sgmm = SGMM()
-	sgmm._halve_interval(data, interval, abic, midpoint, abic_m, n_init)
+	sgmm._halve_interval(data, interval, abic, midpoint, abic_m)
 
-@pytest.mark.parametrize("data, interval, abic, n_init", [
-	([0,1,3,4,1,2,2,-1,2.5], (1,3), (250, 600), 5),
-	([[1,0,0],[1,1,1],[0,1,0],[-1,1,1],[0,0,1],[2,0,-1],[1.5,0,0.5]], (1,3), (250, 600), 5),
-	([[0,21,3],[2,4,3],[34,3,2],[2,5,1],[1,6,3],[23,12,5],[2,6,9]], (1,5), (250, 600), 5),
+@pytest.mark.parametrize("data, interval, abic", [
+	([0,1,3,4,1,2,2,-1,2.5], (1,3), (250, 600)),
+	([[1,0,0],[1,1,1],[0,1,0],[-1,1,1],[0,0,1],[2,0,-1],[1.5,0,0.5]], (1,3), (250, 600)),
+	([[0,21,3],[2,4,3],[34,3,2],[2,5,1],[1,6,3],[23,12,5],[2,6,9]], (1,5), (250, 600)),
 ])
 
-def test_truncate_interval(data, interval, abic, n_init):
+def test_truncate_interval(data, interval, abic):
 	sgmm = SGMM()
-	sgmm._truncate_interval(data, interval, abic, n_init)
+	sgmm._truncate_interval(data, interval, abic)
 
 @pytest.mark.parametrize("data, init_cores", [
 	([0,1,3,4,1,2,2,-1,2.5], 2),
@@ -52,7 +52,7 @@ def test_truncate_interval(data, interval, abic, n_init):
 
 def test_fit_stabilize(data, init_cores):
 	sgmm = SGMM(init_cores=init_cores)
-	sgmm._fit_stabilize(data, init_cores)
+	sgmm._fit_stabilize(data)
 
 def test_fit_stabilize_1D():
 	n = 1000
@@ -82,3 +82,8 @@ def test_fit_stabilize_2D():
 	sgmm = SGMM()
 	sgmm.fit(X)
 	assert len(sgmm.cores) == 4
+
+def test_fit_no_stabilize():
+	sgmm = SGMM(stabilize=None)
+	sgmm.fit([0,1,5,2,35,4,5,7,5,3,5,3,2])
+	assert len(sgmm.cores) == 5

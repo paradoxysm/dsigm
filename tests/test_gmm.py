@@ -45,14 +45,14 @@ def test_initialize_core_error():
 
 def test_initialize(data):
 	gmm = GMM()
-	gmm._initialize(data, gmm.init_cores)
+	gmm._initialize(data)
 	gmm = GMM(init='random')
-	gmm._initialize(data, gmm.init_cores)
+	gmm._initialize(data)
 
 def test_initialize_error():
 	with pytest.raises(ValueError):
 		gmm = GMM(init='bad')
-		gmm._initialize([0], gmm.init_cores)
+		gmm._initialize([0])
 
 def test_get_params():
 	gmm = GMM()
@@ -66,7 +66,7 @@ def test_get_params():
 
 def test_expectation(data):
 	gmm = GMM()
-	gmm._initialize(data, gmm.init_cores)
+	gmm._initialize(data)
 	p, p_norm, resp = gmm._expectation(data)
 	assert len(p) == len(gmm.cores) and p.shape[-1] == len(data)
 
@@ -82,7 +82,7 @@ def test_expectation_error():
 
 def test_maximization(data):
 	gmm = GMM()
-	gmm._initialize(data, gmm.init_cores)
+	gmm._initialize(data)
 	p, p_norm, resp = gmm._expectation(data)
 	gmm._maximization(data, resp)
 
@@ -93,7 +93,7 @@ def test_maximization(data):
 
 def test_score_bic_parameters(data, n_parameters):
 	gmm = GMM()
-	gmm._initialize(data, gmm.init_cores)
+	gmm._initialize(data)
 	p, p_norm, resp = gmm._expectation(data)
 	gmm.score(p_norm)
 	assert gmm._n_parameters() == n_parameters
@@ -106,7 +106,7 @@ def test_score_bic_parameters(data, n_parameters):
 
 def test_score_aic_parameters(data, n_parameters):
 	gmm = GMM()
-	gmm._initialize(data, gmm.init_cores)
+	gmm._initialize(data)
 	p, p_norm, resp = gmm._expectation(data)
 	gmm.score(p_norm)
 	assert gmm._n_parameters() == n_parameters
@@ -119,11 +119,11 @@ def test_score_aic_parameters(data, n_parameters):
 
 def test_score_abic_parameters(data, n_parameters):
 	gmm = GMM()
-	gmm._initialize(data, gmm.init_cores)
+	gmm._initialize(data)
 	p, p_norm, resp = gmm._expectation(data)
 	gmm.score(p_norm)
 	assert gmm._n_parameters() == n_parameters
-	gmm._abic(data)
+	gmm.abic(data)
 
 @pytest.mark.parametrize("data", [
 	([0,1,3,4,1,2]),
@@ -133,8 +133,8 @@ def test_score_abic_parameters(data, n_parameters):
 
 def test_fit_single(data):
 	gmm = GMM(init_cores=2)
-	gmm._initialize(data, gmm.init_cores)
-	gmm._fit_single(data, gmm.init_cores)
+	gmm._initialize(data)
+	gmm._fit_single(data)
 
 @pytest.mark.parametrize("data", [
 	([0,1,3,4,1,2,2,-1,2.5]),
@@ -167,5 +167,5 @@ def test_predict_warns(data):
 
 def test_predict(data):
 	gmm = GMM(init_cores=2)
-	gmm._initialize(data, gmm.init_cores)
+	gmm._initialize(data)
 	gmm.predict(data)
