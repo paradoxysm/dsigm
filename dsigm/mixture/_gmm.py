@@ -130,15 +130,14 @@ class GMM:
 		data = self._validate_data(data)
 		best_inertia, best_cores = self.inertia, self.cores
 		for init in range(1, self.n_init + 1):
-			inertia, cores = self._fit_single(data, self.init_cores)
+			inertia, cores = self._fit_single(data)
 			if inertia > best_inertia:
 				best_inertia, best_cores = inertia, cores
 		if not self.converged:
-			warnings.warn('Initialization %d did not converge. '
+			warnings.warn('Initialization did not converge. '
                           'Try different init parameters, '
                           'or increase max_iter, tol '
-                          'or check for degenerate data.'
-                          % (init), ConvergenceWarning)
+                          'or check for degenerate data.', ConvergenceWarning)
 		self.cores, self.inertia = best_cores, best_inertia
 		return self
 
@@ -192,7 +191,7 @@ class GMM:
 			raise ValueError("Mismatch in dimensions between model and input data.")
 		return data
 
-	def _fit_single(self, data, init_cores):
+	def _fit_single(self, data):
 		"""
 		A single attempt to estimate model parameters
 		with the EM algorithm.
@@ -207,10 +206,6 @@ class GMM:
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
 
-		init_cores : int, default=5
-			The initial number of Cores (Gaussian components)
-			to fit the data.
-
 		Returns
 		-------
 		inertia : float
@@ -219,7 +214,7 @@ class GMM:
 		cores : array-like, shape (n_cores,)
 			A list of Cores for this fit trial.
 		"""
-		self._initialize(data, init_cores)
+		self._initialize(data)
 		self.inertia = -np.inf
 		for iter in range(1, self.max_iter + 1):
 			p, p_norm, resp = self._expectation(data)
@@ -230,9 +225,9 @@ class GMM:
 				break
 		return self.inertia, self.cores
 
-	def _estimate_parameters(self, data, resp, init_cores):
+	def _estimate_parameters(self, data, resp):
 		"""
-		Initialize model parameters.
+		Estimate model parameters.
 
 		Parameters
 		----------
@@ -243,10 +238,6 @@ class GMM:
 		resp : array-like, shape (n_samples, n_cores)
 			The normalized probabilities for each data sample in `data`.
 
-		init_cores : int, default=5
-			The initial number of Cores (Gaussian components)
-			to fit the data.
-
 		Returns
 		-------
 		params : dict
@@ -254,15 +245,15 @@ class GMM:
 		"""
 		delta = np.sum(resp, axis=0) + 10 * np.finfo(resp.dtype).eps
 		mu = np.dot(resp.T, data) / delta[:,np.newaxis]
-		sigma = np.empty((init_cores, self.dim, self.dim))
-		for k in range(init_cores):
+		sigma = np.empty((len(resp.T), self.dim, self.dim))
+		for k in range(len(resp.T)):
 			diff = data - mu[k]
 			sigma[k] = np.dot(resp[:, k] * diff.T, diff) / delta[k]
 			sigma[k].flat[::self.dim + 1] += self.reg_covar
 		delta = (delta / len(data))[:,np.newaxis]
 		return {'mu':mu, 'sigma':sigma, 'delta':delta}
 
-	def _initialize(self, data, init_cores):
+	def _initialize(self, data):
 		"""
 		Initialize a set of Cores within the data space.
 
@@ -271,10 +262,6 @@ class GMM:
 		data : array-like, shape (n_samples, n_features)
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
-
-		init_cores : int, default=5
-			The initial number of Cores (Gaussian components)
-			to fit the data.
 
 		Returns
 		-------
@@ -286,18 +273,18 @@ class GMM:
 		cores = []
 		params = None
 		if self.init == 'kmeans':
-			resp = np.zeros((len(data), init_cores))
-			label = KMeans(n_clusters=init_cores, n_init=1,
+			resp = np.zeros((len(data), self.init_cores))
+			label = KMeans(n_clusters=self.init_cores, n_init=1,
 							random_state=self.random_state).fit(data).labels_
 			resp[np.arange(len(data)), label] = 1
-			params = self._estimate_parameters(data, resp, init_cores)
+			params = self._estimate_parameters(data, resp)
 		elif self.init == 'random':
-			none = np.full((init_cores,), None)
+			none = np.full((self.init_cores,), None)
 			params = {'mu':none, 'sigma':none, 'delta':none}
 		else:
 			raise ValueError("Unimplemented initialization method '%s'"
                              % self.init)
-		for n in range(init_cores):
+		for n in range(self.init_cores):
 			mu, sigma, delta = params['mu'][n], params['sigma'][n], params['delta'][n]
 			core = self._initialize_core(mu=mu, sigma=sigma, delta=delta)
 			cores.append(core)
@@ -384,7 +371,7 @@ class GMM:
 			The normalized probabilities for each data sample in `data`.
 		"""
 		data = self._validate_data(data)
-		params = self._estimate_parameters(data, resp.T, len(resp))
+		params = self._estimate_parameters(data, resp.T)
 		for i in range(len(self.cores)):
 			mu = params['mu'][i]
 			sigma = params['sigma'][i]
@@ -448,24 +435,30 @@ class GMM:
 		penalty = 2 * self._n_parameters()
 		return fit + penalty
 
-	def _abic(self, data):
+	def abic(self, data, bic_weight=0.5):
 		"""
-		Calculate the average of the AIC and BIC for
+		Calculate a weighted average of the AIC and BIC for
 		the current model on the input `data`.
 
 		Parameters
 		----------
 		data : array-like, shape (n_samples, n_features)
-				List of `n_features`-dimensional data points.
-				Each row corresponds to a single data point.
+			List of `n_features`-dimensional data points.
+			Each row corresponds to a single data point.
+
+		bic_weight : float, default=0.5
+			A float withn [0., 1.] that determines the
+			weighting of BIC scores to AIC scores in
+			calculating the ABIC composite.
 
 		-------
 		abic : float
-				Mean of Akaike Information Criterion
-				and Bayesian Information Criterion.
-				The lower the better.
+			Weighted average of Akaike Information Criterion
+			and Bayesian Information Criterion.
+			The lower the better.
 		"""
-		return np.mean([self.bic(data), self.aic(data)])
+		return np.average([self.bic(data), self.aic(data)],
+							weights=[bic_weight, 1-bic_weight])
 
 	def _n_parameters(self):
 		"""

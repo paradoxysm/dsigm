@@ -30,8 +30,15 @@ class SGMM(GMM):
             'kmeans' : responsibilities are initialized using kmeans.
             'random' : responsibilities are initialized randomly.
 
-	stabilize : True or False, default=True
-		Enable stabilization of the number of Cores.
+	stabilize : float or None, default=0.5
+		A float withn [0., 1.] that determines the weighting of
+		BIC scores to AIC scores in calculating the ABIC composite.
+		Also acts to enable stabilization. If None, stabilization
+		is disabled.
+
+	n_stabilize : int, default=5
+		Number of times the SGMM will run indvidual fittings during
+		the stabilization process.
 
 	n_init : int, default=10
 		Number of times the SGMM  will be run with different
@@ -73,14 +80,15 @@ class SGMM(GMM):
 		The range that encompasses the data in each axis.
 	"""
 	def __init__(self, init_cores=5, init='kmeans',
-					stabilize=True, n_init=10, max_iter=100,
+					stabilize=0.5, n_stabilize=5, n_init=10, max_iter=100,
 					tol=1e-3, reg_covar=1e-6, random_state=None):
 		super().__init__(init_cores=init_cores, init=init, n_init=n_init,
 		 					max_iter=max_iter, tol=tol,
 							reg_covar=reg_covar, random_state=random_state)
 		self.stabilize = stabilize
+		self.n_stabilize = n_stabilize
 
-	def fit(self, data, stabilize=None, init_cores=None):
+	def fit(self, data):
 		"""
 		Estimate model parameters with the EM algorithm.
 
@@ -97,14 +105,6 @@ class SGMM(GMM):
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
 
-		stabilize : True, False, or None, default=None
-			Enable stabilization of the number of Cores.
-			If None, determine based on model.
-
-		init_cores : int, default=None
-			The initial number of Cores (Gaussian components)
-			to fit the data.
-
 		Returns
 		-------
 		self : SGMM
@@ -112,25 +112,23 @@ class SGMM(GMM):
 		"""
 		data = self._validate_data(data)
 		best_inertia, best_cores = self.inertia, self.cores
-		stabilize = self.stabilize if stabilize is None else stabilize
-		init_cores = self.init_cores if init_cores is None else init_cores
 		for init in range(1, self.n_init + 1):
-			if stabilize:
-				inertia, cores = self._fit_stabilize(data, init_cores)
+			if self.stabilize is not None and \
+					(self.stabilize >= 0 or self.stabilize <= 1):
+				inertia, cores = self._fit_stabilize(data)
 			else:
-				inertia, cores = self._fit_single(data, init_cores)
+				inertia, cores = self._fit_single(data)
 			if inertia > best_inertia:
 				best_inertia, best_cores = inertia, cores
 		if not self.converged:
-			warnings.warn('Initialization %d did not converge. '
+			warnings.warn('Initialization did not converge. '
                           'Try different init parameters, '
                           'or increase max_iter, tol '
-                          'or check for degenerate data.'
-                          % (init), ConvergenceWarning)
+                          'or check for degenerate data.', ConvergenceWarning)
 		self.cores, self.inertia = best_cores, best_inertia
 		return self
 
-	def _fit_stabilize(self, data, init_cores):
+	def _fit_stabilize(self, data):
 		"""
 		A single attempt to estimate model parameters
 		with the EM algorithm.
@@ -147,10 +145,6 @@ class SGMM(GMM):
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
 
-		init_cores : int, default=5
-			The initial number of Cores (Gaussian components)
-			to fit the data.
-
 		Returns
 		-------
 		inertia : float
@@ -159,11 +153,10 @@ class SGMM(GMM):
 		cores : array-like, shape (n_cores,)
 			A list of Cores for this fit trial.
 		"""
-		n_init = self.n_init // 2
-		interval, abic = self._orient_stabilizer(data, init_cores)
+		interval, abic = self._orient_stabilizer(data)
 		while interval[1] - interval[0] > 1:
 			midpoint = (interval[0] + interval[1]) // 2
-			abic_m = GMM(n_init=n_init, init_cores=midpoint).fit(data)._abic(data)
+			abic_m = GMM(n_init=self.n_stabilize, init_cores=midpoint).fit(data).abic(data, self.stabilize)
 			if (abic[0] > abic_m and abic_m >= abic[1]) or \
 					(abic[0] >= abic_m and abic_m > abic[1]):
 				interval, abic = (midpoint, interval[1]), (abic_m, abic[1])
@@ -172,14 +165,16 @@ class SGMM(GMM):
 				interval, abic = (interval[0], midpoint), (abic[0], abic_m)
 			elif abic_m <= abic[0] and abic_m <= abic[1]:
 				interval, abic = self._halve_interval(data, interval, abic,
-									midpoint, abic_m, n_init)
+									midpoint, abic_m)
 			else:
-				interval, abic = self._truncate_interval(data, interval, abic, n_init)
+				interval, abic = self._truncate_interval(data, interval, abic)
 		best = 0 if abic[0] < abic[1] else 1
-		self.fit(data, stabilize=False, init_cores=interval[best])
+		model = GMM(init_cores=interval[best]).fit(data)
+		self.inertia, self.cores = model.inertia, model.cores
+		self.converged = model.converged
 		return self.inertia, self.cores
 
-	def _truncate_interval(self, data, interval, abic, n_init):
+	def _truncate_interval(self, data, interval, abic):
 		"""
 		Truncate the interval by reducing the upper or lower limit
 		based on which has the higher BIC/AIC (ABIC).
@@ -197,11 +192,6 @@ class SGMM(GMM):
 		abic : tuple, shape (2,)
 			The abic scores corresponding to the interval.
 
-		n_init : int, default=10
-			Number of times the SGMM  will be run with different
-	        Core seeds. The final results will be the best output of
-	        n_init consecutive runs in terms of inertia.
-
 		Returns
 		-------
 		interval : tuple, shape (2,)
@@ -213,15 +203,15 @@ class SGMM(GMM):
 		"""
 		if abic[1] >= abic[0]:
 			interval_l = interval[1] - 1
-			abic_l = GMM(n_init=n_init, init_cores=interval_l).fit(data)._abic(data)
+			abic_l = GMM(n_init=self.n_stabilize, init_cores=interval_l).fit(data).abic(data, self.stabilize)
 			interval, abic = (interval[0], interval_l), (abic[0], abic_l)
 		else:
 			interval_l = interval[1] + 1
-			abic_l = GMM(n_init=n_init, init_cores=interval_l).fit(data)._abic(data)
+			abic_l = GMM(n_init=self.n_stabilize, init_cores=interval_l).fit(data).abic(data, self.stabilize)
 			interval, abic = (interval_l, interval[1]), (abic_l, abic[1])
 		return interval, abic
 
-	def _halve_interval(self, data, interval, abic, midpoint, abic_m, n_init):
+	def _halve_interval(self, data, interval, abic, midpoint, abic_m):
 		"""
 		Halve the interval based on the BIC/AIC (ABIC) of the midpoint.
 
@@ -244,11 +234,6 @@ class SGMM(GMM):
 		abic_m : float
 			The abic score corresponding to the midpoint.
 
-		n_init : int, default=10
-			Number of times the SGMM  will be run with different
-	        Core seeds. The final results will be the best output of
-	        n_init consecutive runs in terms of inertia.
-
 		Returns
 		-------
 		interval : tuple, shape (2,)
@@ -262,17 +247,17 @@ class SGMM(GMM):
 		if m0 == interval[0]:
 			return (midpoint, interval[1]), (abic_m, abic[1])
 		else:
-			abic_m0 = GMM(n_init=n_init, init_cores=m0).fit(data)._abic(data)
+			abic_m0 = GMM(n_init=self.n_stabilize, init_cores=m0).fit(data).abic(data, self.stabilize)
 			if abic_m0 < abic_m:
 				return (interval[0], midpoint), (abic[0], abic_m)
 			m1 = (interval[1] + midpoint) // 2
-			abic_m1 = GMM(n_init=n_init, init_cores=m1).fit(data)._abic(data)
+			abic_m1 = GMM(n_init=self.n_stabilize, init_cores=m1).fit(data).abic(data, self.stabilize)
 			if abic_m1 < abic_m:
 				return (midpoint, interval[1]), (abic_m, abic[1])
 			else:
 				return (m0, m1), (abic_m0, abic_m1)
 
-	def _orient_stabilizer(self, data, init_cores):
+	def _orient_stabilizer(self, data):
 		"""
 		Orient the initial interval for the stabilizer.
 
@@ -281,10 +266,6 @@ class SGMM(GMM):
 		data : array-like, shape (n_samples, n_features)
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
-
-		init_cores : int, default=5
-			The initial number of Cores (Gaussian components)
-			to fit the data.
 
 		Returns
 		-------
@@ -299,13 +280,13 @@ class SGMM(GMM):
 		abic = (np.inf, np.inf)
 		ceiling = len(np.unique(data, axis=0))
 		n_init = self.n_init // 2
-		i, j = init_cores, init_cores + 1
+		i, j = self.n_stabilize, self.n_stabilize + 1
 		if j > ceiling:
 			i, j = ceiling - 1, ceiling
-		abic_i = GMM(n_init=n_init, init_cores=i).fit(data)._abic(data)
-		abic_j = GMM(n_init=n_init, init_cores=j).fit(data)._abic(data)
+		abic_i = GMM(n_init=self.n_stabilize, init_cores=i).fit(data).abic(data, self.stabilize)
+		abic_j = GMM(n_init=self.n_stabilize, init_cores=j).fit(data).abic(data, self.stabilize)
 		if abic_j - abic_i >= 0:
-			abic_1 = GMM(n_init=n_init, init_cores=1).fit(data)._abic(data)
+			abic_1 = GMM(n_init=self.n_stabilize, init_cores=1).fit(data).abic(data, self.stabilize)
 			interval, abic = (1, j), (abic_1, abic_j)
 		else:
 			min, abic_min = j, abic_j
@@ -318,6 +299,6 @@ class SGMM(GMM):
 					break
 				else:
 					j += inc
-					abic_j = GMM(n_init=n_init, init_cores=j).fit(data)._abic(data)
+					abic_j = GMM(n_init=self.n_stabilize, init_cores=j).fit(data).abic(data, self.stabilize)
 			interval, abic = (min, j), (abic_min, abic_j)
 		return interval, abic
