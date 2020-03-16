@@ -157,11 +157,9 @@ class SGMM(GMM):
 		while interval[1] - interval[0] > 1:
 			midpoint = (interval[0] + interval[1]) // 2
 			abic_m = GMM(n_init=self.n_stabilize, init_cores=midpoint).fit(data).abic(data, bic_weight=self.stabilize)
-			if (abic[0] > abic_m and abic_m >= abic[1]) or \
-					(abic[0] >= abic_m and abic_m > abic[1]):
+			if abic[0] >= abic_m and abic_m >= abic[1]:
 				interval, abic = (midpoint, interval[1]), (abic_m, abic[1])
-			elif (abic[1] > abic_m and abic_m > abic[0]) or \
-					(abic[1] >= abic_m and abic_m > abic[1]):
+			elif abic[1] >= abic_m and abic_m >= abic[0]:
 				interval, abic = (interval[0], midpoint), (abic[0], abic_m)
 			elif abic_m <= abic[0] and abic_m <= abic[1]:
 				interval, abic = self._halve_interval(data, interval, abic,
