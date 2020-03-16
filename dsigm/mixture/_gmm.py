@@ -7,6 +7,7 @@ import numpy as np
 import warnings
 from sklearn.datasets import make_spd_matrix
 from sklearn.cluster import KMeans
+from scipy.special import logsumexp
 
 from .._utils import format_array, create_random_state
 from .._exceptions import ConvergenceWarning, InitializationWarning
@@ -219,7 +220,7 @@ class GMM:
 		for iter in range(1, self.max_iter + 1):
 			p, p_norm, resp = self._expectation(data)
 			self._maximization(data, resp)
-			prev_inertia, self.inertia = self.inertia, self.score(p_norm)
+			prev_inertia, self.inertia = self.inertia, np.mean(p_norm)
 			if np.abs(self.inertia - prev_inertia) < self.tol:
 				self.converged = True
 				break
@@ -235,20 +236,20 @@ class GMM:
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
 
-		resp : array-like, shape (n_samples, n_cores)
-			The normalized probabilities for each data sample in `data`.
+		resp : array-like, shape (n_cores, n_samples)
+			The normalized log probabilities for each data sample in `data`.
 
 		Returns
 		-------
 		params : dict
 			Estimated parameters for the model.
 		"""
-		delta = np.sum(resp, axis=0) + 10 * np.finfo(resp.dtype).eps
-		mu = np.dot(resp.T, data) / delta[:,np.newaxis]
-		sigma = np.empty((len(resp.T), self.dim, self.dim))
-		for k in range(len(resp.T)):
+		delta = np.sum(resp, axis=1) + 10 * np.finfo(resp.dtype).eps
+		mu = np.dot(resp, data) / delta[:,np.newaxis]
+		sigma = np.empty((len(resp), self.dim, self.dim))
+		for k in range(len(resp)):
 			diff = data - mu[k]
-			sigma[k] = np.dot(resp[:, k] * diff.T, diff) / delta[k]
+			sigma[k] = np.dot(resp[k,:] * diff.T, diff) / delta[k]
 			sigma[k].flat[::self.dim + 1] += self.reg_covar
 		delta = (delta / len(data))[:,np.newaxis]
 		return {'mu':mu, 'sigma':sigma, 'delta':delta}
@@ -277,7 +278,7 @@ class GMM:
 			label = KMeans(n_clusters=self.init_cores, n_init=1,
 							random_state=self.random_state).fit(data).labels_
 			resp[np.arange(len(data)), label] = 1
-			params = self._estimate_parameters(data, resp)
+			params = self._estimate_parameters(data, resp.T)
 		elif self.init == 'random':
 			none = np.full((self.init_cores,), None)
 			params = {'mu':none, 'sigma':none, 'delta':none}
@@ -336,25 +337,25 @@ class GMM:
 		Returns
 		-------
 		p : array, shape (n_cores, n_samples)
-			Probabilities of samples under each Core.
+			Log probabilities of samples under each Core.
 
 		p_norm : array, shape (n_samples,)
-			Total probabilities of each sample.
+			Total log probabilities of each sample.
 
 		resp : array-like, shape (n_cores, n_samples)
-			The normalized probabilities for each data sample in `data`.
+			The normalized log probabilities for each data sample in `data`.
 		"""
 		data = self._validate_data(data)
 		p_unweighted = []
 		for core in self.cores:
-			p_unweighted.append(core.pdf(data))
+			p_unweighted.append(core.logpdf(data))
 		p_unweighted = np.asarray(p_unweighted)
 		if p_unweighted.shape != (len(self.cores), len(data)):
 			raise RuntimeError("Expectation Step found erroneous shape")
 		delta_cores = [self.cores[i].delta for i in range(len(self.cores))]
-		p = p_unweighted * delta_cores
-		p_norm = np.sum(p, axis=0)
-		resp = p / (p_norm + 1e-8)
+		p = p_unweighted + np.log(delta_cores)
+		p_norm = logsumexp(p, axis=0)
+		resp = p - p_norm
 		return p, p_norm, resp
 
 	def _maximization(self, data, resp):
@@ -368,31 +369,33 @@ class GMM:
 			Each row corresponds to a single data point.
 
 		resp : array-like, shape (n_cores, n_samples)
-			The normalized probabilities for each data sample in `data`.
+			The normalized log probabilities for each data sample in `data`.
 		"""
 		data = self._validate_data(data)
-		params = self._estimate_parameters(data, resp.T)
+		params = self._estimate_parameters(data, np.exp(resp))
 		for i in range(len(self.cores)):
 			mu = params['mu'][i]
 			sigma = params['sigma'][i]
 			delta = params['delta'][i]
 			self.cores[i] = Core(mu=mu, sigma=sigma, delta=delta)
 
-	def score(self, p_norm):
+	def score(self, data):
 		"""
 		Compute the per-sample average log-likelihood.
 
 		Parameters
 		----------
-		p_norm : array-like, shape (n_samples,)
-			Probabilities of samples.
+		data : array-like, shape (n_samples, n_features)
+			List of `n_features`-dimensional data points.
+			Each row corresponds to a single data point.
 
 		Returns
 		-------
 		log_likelihood : float
 			Log likelihood of the model.
 		"""
-		return np.mean(np.log(p_norm+1e-8))
+		p, p_norm, resp = self._expectation(data)
+		return np.mean(p_norm)
 
 	def bic(self, data):
 		"""
@@ -410,8 +413,7 @@ class GMM:
 		bic : float
 			Bayesian Information Criterion. The lower the better.
 		"""
-		p, p_norm, resp = self._expectation(data)
-		fit = -2 * self.score(p_norm) * len(data)
+		fit = -2 * self.score(data) * len(data)
 		penalty = self._n_parameters() * np.log(len(data))
 		return fit + penalty
 
@@ -430,8 +432,7 @@ class GMM:
 		aic : float
 				Akaike Information Criterion. The lower the better.
 		"""
-		p, p_norm, resp = self._expectation(data)
-		fit = -2 * self.score(p_norm) * len(data)
+		fit = -2 * self.score(data) * len(data)
 		penalty = 2 * self._n_parameters()
 		return fit + penalty
 

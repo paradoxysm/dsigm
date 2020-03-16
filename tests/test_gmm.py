@@ -94,8 +94,7 @@ def test_maximization(data):
 def test_score_bic_parameters(data, n_parameters):
 	gmm = GMM()
 	gmm._initialize(data)
-	p, p_norm, resp = gmm._expectation(data)
-	gmm.score(p_norm)
+	gmm.score(data)
 	assert gmm._n_parameters() == n_parameters
 	gmm.bic(data)
 
@@ -107,8 +106,7 @@ def test_score_bic_parameters(data, n_parameters):
 def test_score_aic_parameters(data, n_parameters):
 	gmm = GMM()
 	gmm._initialize(data)
-	p, p_norm, resp = gmm._expectation(data)
-	gmm.score(p_norm)
+	gmm.score(data)
 	assert gmm._n_parameters() == n_parameters
 	gmm.aic(data)
 
@@ -120,8 +118,7 @@ def test_score_aic_parameters(data, n_parameters):
 def test_score_abic_parameters(data, n_parameters):
 	gmm = GMM()
 	gmm._initialize(data)
-	p, p_norm, resp = gmm._expectation(data)
-	gmm.score(p_norm)
+	gmm.score(data)
 	assert gmm._n_parameters() == n_parameters
 	gmm.abic(data)
 
