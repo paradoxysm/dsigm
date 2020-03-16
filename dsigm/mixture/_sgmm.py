@@ -156,7 +156,7 @@ class SGMM(GMM):
 		interval, abic = self._orient_stabilizer(data)
 		while interval[1] - interval[0] > 1:
 			midpoint = (interval[0] + interval[1]) // 2
-			abic_m = GMM(n_init=self.n_stabilize, init_cores=midpoint).fit(data).abic(data, self.stabilize)
+			abic_m = GMM(n_init=self.n_stabilize, init_cores=midpoint).fit(data).abic(data, bic_weight=self.stabilize)
 			if (abic[0] > abic_m and abic_m >= abic[1]) or \
 					(abic[0] >= abic_m and abic_m > abic[1]):
 				interval, abic = (midpoint, interval[1]), (abic_m, abic[1])
@@ -203,11 +203,11 @@ class SGMM(GMM):
 		"""
 		if abic[1] >= abic[0]:
 			interval_l = interval[1] - 1
-			abic_l = GMM(n_init=self.n_stabilize, init_cores=interval_l).fit(data).abic(data, self.stabilize)
+			abic_l = GMM(n_init=self.n_stabilize, init_cores=interval_l).fit(data).abic(data, bic_weight=self.stabilize)
 			interval, abic = (interval[0], interval_l), (abic[0], abic_l)
 		else:
 			interval_l = interval[1] + 1
-			abic_l = GMM(n_init=self.n_stabilize, init_cores=interval_l).fit(data).abic(data, self.stabilize)
+			abic_l = GMM(n_init=self.n_stabilize, init_cores=interval_l).fit(data).abic(data, bic_weight=self.stabilize)
 			interval, abic = (interval_l, interval[1]), (abic_l, abic[1])
 		return interval, abic
 
@@ -247,11 +247,11 @@ class SGMM(GMM):
 		if m0 == interval[0]:
 			return (midpoint, interval[1]), (abic_m, abic[1])
 		else:
-			abic_m0 = GMM(n_init=self.n_stabilize, init_cores=m0).fit(data).abic(data, self.stabilize)
+			abic_m0 = GMM(n_init=self.n_stabilize, init_cores=m0).fit(data).abic(data, bic_weight=self.stabilize)
 			if abic_m0 < abic_m:
 				return (interval[0], midpoint), (abic[0], abic_m)
 			m1 = (interval[1] + midpoint) // 2
-			abic_m1 = GMM(n_init=self.n_stabilize, init_cores=m1).fit(data).abic(data, self.stabilize)
+			abic_m1 = GMM(n_init=self.n_stabilize, init_cores=m1).fit(data).abic(data, bic_weight=self.stabilize)
 			if abic_m1 < abic_m:
 				return (midpoint, interval[1]), (abic_m, abic[1])
 			else:
@@ -283,10 +283,10 @@ class SGMM(GMM):
 		i, j = self.n_stabilize, self.n_stabilize + 1
 		if j > ceiling:
 			i, j = ceiling - 1, ceiling
-		abic_i = GMM(n_init=self.n_stabilize, init_cores=i).fit(data).abic(data, self.stabilize)
-		abic_j = GMM(n_init=self.n_stabilize, init_cores=j).fit(data).abic(data, self.stabilize)
+		abic_i = GMM(n_init=self.n_stabilize, init_cores=i).fit(data).abic(data, bic_weight=self.stabilize)
+		abic_j = GMM(n_init=self.n_stabilize, init_cores=j).fit(data).abic(data, bic_weight=self.stabilize)
 		if abic_j - abic_i >= 0:
-			abic_1 = GMM(n_init=self.n_stabilize, init_cores=1).fit(data).abic(data, self.stabilize)
+			abic_1 = GMM(n_init=self.n_stabilize, init_cores=1).fit(data).abic(data, bic_weight=self.stabilize)
 			interval, abic = (1, j), (abic_1, abic_j)
 		else:
 			min, abic_min = j, abic_j
@@ -299,6 +299,6 @@ class SGMM(GMM):
 					break
 				else:
 					j += inc
-					abic_j = GMM(n_init=self.n_stabilize, init_cores=j).fit(data).abic(data, self.stabilize)
+					abic_j = GMM(n_init=self.n_stabilize, init_cores=j).fit(data).abic(data, bic_weight=self.stabilize)
 			interval, abic = (min, j), (abic_min, abic_j)
 		return interval, abic
