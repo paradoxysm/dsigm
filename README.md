@@ -14,16 +14,17 @@ More details regarding DSIGM can be found in the documentation [here](https://gi
 
 ### Dependencies
 
-dsigm requires:
-- numpy
-- scipy
-- sklearn
-
-dsigm is tested and supported on Python 3.4+ up to Python 3.7. Usage on other versions of Python is not guaranteed to work as intended.
+`dsigm` requires:
+```
+numpy
+scipy
+sklearn
+```
+`dsigm` is tested and supported on Python 3.4+ up to Python 3.7. Usage on other versions of Python is not guaranteed to work as intended.
 
 ### User Installation
 
-dsigm can be easily installed using ```pip```
+`dsigm` can be easily installed using ```pip```
 
 ```
 pip install dsigm
@@ -40,15 +41,15 @@ See the [changelog](https://github.com/paradoxysm/dsigm/blob/master/CHANGES.md) 
 [![Maintainability](https://api.codeclimate.com/v1/badges/db50b93805392126d265/maintainability)](https://codeclimate.com/github/paradoxysm/dsigm/maintainability)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fparadoxysm%2Fdsigm.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fparadoxysm%2Fdsigm?ref=badge_shield)
 
-dsigm is still under development. As of `0.3.1 prerelease`, only the Self-stabilizing Gaussian Mixture Model (SGMM) has been implemented.
+`dsigm` is still under development. As of `0.3.1 prerelease`, only the Self-stabilizing Gaussian Mixture Model (SGMM) has been implemented.
 
-There are three main branches for development and release. `master` is the current development build; `staging` is the staging branch for releases; `release` is the current public release build.
+There are three main branches for development and release. [`master`](https://github.com/paradoxysm/dsigm) is the current development build; [`staging`](https://github.com/paradoxysm/dsigm/tree/staging) is the staging branch for releases; [`release`](https://github.com/paradoxysm/dsigm/tree/release) is the current public release build.
 
 ## Help and Support
 
 ### Documentation
 
-Documentation for dsigm can be found [here](https://github.com/paradoxysm/dsigm/tree/master/doc).
+Documentation for `dsigm` can be found [here](https://github.com/paradoxysm/dsigm/tree/master/doc).
 
 ### Issues and Questions
 
