@@ -1,8 +1,8 @@
 ## DSIGM Clustering Algorithm
 
-[![Build Status](https://travis-ci.com/paradoxysm/dsigm.svg?branch=master)](https://travis-ci.com/paradoxysm/dsigm)
-[![codecov](https://codecov.io/gh/paradoxysm/dsigm/branch/master/graph/badge.svg?token=cpaPkUHKah)](https://codecov.io/gh/paradoxysm/dsigm)
-[![GitHub](https://img.shields.io/github/license/paradoxysm/dsigm?color=blue)](https://github.com/paradoxysm/dsigm/blob/master/LICENSE)
+[![Travis (.com)](https://img.shields.io/travis/com/paradoxysm/dsigm?style=flat-square)](https://travis-ci.com/paradoxysm/dsigm)
+[![Codecov](https://img.shields.io/codecov/c/gh/paradoxysm/dsigm?style=flat-square&token=5e48e76aa703404f901dea510983281a)](https://codecov.io/gh/paradoxysm/dsigm)
+[![GitHub](https://img.shields.io/github/license/paradoxysm/dsigm?color=blue&style=flat-square)](https://github.com/paradoxysm/dsigm/blob/master/LICENSE)
 
 ## Overview
 
@@ -38,8 +38,7 @@ See the [changelog](https://github.com/paradoxysm/dsigm/blob/master/CHANGES.md) 
 
 ## Development
 
-[![Maintainability](https://api.codeclimate.com/v1/badges/db50b93805392126d265/maintainability)](https://codeclimate.com/github/paradoxysm/dsigm/maintainability)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fparadoxysm%2Fdsigm.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fparadoxysm%2Fdsigm?ref=badge_shield)
+[![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability-percentage/paradoxysm/dsigm?style=flat-square)](https://codeclimate.com/github/paradoxysm/dsigm/maintainability)
 
 `dsigm` is still under development. As of `0.3.1 prerelease`, only the Self-stabilizing Gaussian Mixture Model (SGMM) has been implemented.
 
