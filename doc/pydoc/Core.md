@@ -58,7 +58,7 @@ If `dim` has not yet been set, set it now.
 
 ## pdf
 ```python
-Core.pdf(data)
+Core.pdf(data, weight=False)
 ```
 
 Multivariate normal probability density function.
@@ -67,6 +67,9 @@ Multivariate normal probability density function.
 ```
 data : array-like
 	Quantiles, with the last axis of `data` denoting the features.
+	
+weight :  bool, default=False
+	Calculate the pdf with the delta of the Core.
 ```
 
 **Returns**
@@ -77,7 +80,7 @@ pdf : ndarray or scalar
 
 ## logpdf
 ```python
-Core.logpdf(data)
+Core.logpdf(data, weight=False)
 ```
 
 Log of multivariate normal probability density function.
@@ -86,6 +89,9 @@ Log of multivariate normal probability density function.
 ```
 data : array-like
 	Quantiles, with the last axis of `data` denoting the features.
+
+weight :  bool, default=False
+	Calculate the pdf with the delta of the Core.
 ```
 
 **Returns**
