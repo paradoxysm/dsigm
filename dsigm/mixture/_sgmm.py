@@ -16,7 +16,8 @@ class SGMM(GMM):
 
 	SGMM refines the number of components during each
 	iteration of the EM algorithm using a narrowing
-	interval based on the Bayesian Information Criterion.
+	interval based on a composite Akaike-Bayesian Information
+	Criterion.
 
 	Parameters
 	----------
@@ -25,10 +26,10 @@ class SGMM(GMM):
 
 	init : {'random', 'kmeans'}, default='kmeans'
 		The method used to initialize the weights, the means and the
-        precisions.
-        Must be one of::
-            'kmeans' : responsibilities are initialized using kmeans.
-            'random' : responsibilities are initialized randomly.
+		precisions.
+		Must be one of::
+			'kmeans' : responsibilities are initialized using kmeans.
+			'random' : responsibilities are initialized randomly.
 
 	stabilize : float or None, default=0.5
 		A float within [0., 1.] that determines the weighting of
@@ -42,12 +43,12 @@ class SGMM(GMM):
 
 	n_init : int, default=10
 		Number of times the SGMM  will be run with different
-        Core seeds. The final results will be the best output of
-        n_init consecutive runs in terms of inertia.
+		Core seeds. The final results will be the best output of
+		n_init consecutive runs in terms of inertia.
 
 	max_iter : int, default=100
 		Maximum number of iterations of the SGMM for a
-        single run.
+		single run.
 
 	tol : float, default=1e-3
 		Relative tolerance with regards to the difference in inertia
@@ -59,7 +60,7 @@ class SGMM(GMM):
 
 	random_state : None or int or RandomState, default=None
 		Determines random number generation for Core initialization. Use
-        an int to make the randomness deterministic.
+		an int to make the randomness deterministic.
 
 	Attributes
 	----------
@@ -194,7 +195,7 @@ class SGMM(GMM):
 		-------
 		interval : tuple, shape (2,)
 			The interval which contains the optimal number of Cores.
-			Interpreted as [min, max).
+			Interpreted as [min, max].
 
 		abic : tuple, shape (2,)
 			The abic scores corresponding to the interval.
