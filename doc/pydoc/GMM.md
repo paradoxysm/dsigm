@@ -184,8 +184,9 @@ Compute the per-sample average log-likelihood.
 
 **Parameters**
 ```
-p_norm : array-like, shape (n_samples,)
-	Probabilities of samples.
+data : array-like, shape (n_samples, n_features)
+	List of `n_features`-dimensional data points.
+	Each row corresponds to a single data point.
 ```
 
 **Returns**
