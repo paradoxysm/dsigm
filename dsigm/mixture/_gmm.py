@@ -26,9 +26,9 @@ class GMM:
 	init : {'random', 'kmeans'}, default='kmeans'
 		The method used to initialize the weights, the means and the
         	precisions.
-        Must be one of::
-		'kmeans' : responsibilities are initialized using kmeans.
-		'random' : responsibilities are initialized randomly.
+		Must be one of::
+			'kmeans' : responsibilities are initialized using kmeans.
+			'random' : responsibilities are initialized randomly.
 
 	n_init : int, default=10
 		Number of times the GMM  will be run with different
