@@ -25,19 +25,19 @@ class GMM:
 
 	init : {'random', 'kmeans'}, default='kmeans'
 		The method used to initialize the weights, the means and the
-        precisions.
+        	precisions.
         Must be one of::
-            'kmeans' : responsibilities are initialized using kmeans.
-            'random' : responsibilities are initialized randomly.
+		'kmeans' : responsibilities are initialized using kmeans.
+		'random' : responsibilities are initialized randomly.
 
 	n_init : int, default=10
 		Number of times the GMM  will be run with different
-        Core seeds. The final results will be the best output of
-        n_init consecutive runs in terms of inertia.
+        	Core seeds. The final results will be the best output of
+        	n_init consecutive runs in terms of inertia.
 
 	max_iter : int, default=100
 		Maximum number of iterations of the GMM for a
-        single run.
+      		single run.
 
 	tol : float, default=1e-3
 		Relative tolerance with regards to the difference in inertia
@@ -49,7 +49,7 @@ class GMM:
 
 	random_state : None or int or RandomState, default=None
 		Determines random number generation for Core initialization. Use
-        an int to make the randomness deterministic.
+		an int to make the randomness deterministic.
 
 	Attributes
 	----------
@@ -423,12 +423,12 @@ class GMM:
 		Parameters
 		----------
 		data : array-like, shape (n_samples, n_features)
-				List of `n_features`-dimensional data points.
-				Each row corresponds to a single data point.
+			List of `n_features`-dimensional data points.
+			Each row corresponds to a single data point.
 
 		-------
 		aic : float
-				Akaike Information Criterion. The lower the better.
+			Akaike Information Criterion. The lower the better.
 		"""
 		fit = -2 * self.score(data) * len(data)
 		penalty = 2 * self._n_parameters()
