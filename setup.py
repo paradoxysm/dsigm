@@ -41,8 +41,10 @@ setup(
 		'Programming Language :: Python :: 3.6',
 		'Programming Language :: Python :: 3.7',
         'Topic :: Software Development :: Libraries :: Python Modules',
-        'Topic :: Scientific/Engineering',
-        'Topic :: Software Development :: System :: Clustering',
+        'Topic :: Scientific/Engineering :: Artificial Intelligence',
+	'Topic :: Scientific/Engineering :: Bioinformatics',
+	'Topic :: Scientific/Engineering :: Information Analysis',
+	'Intended Audience :: Science/Research'
     ],
 	keywords=['clustering','python','data-science'],
     zip_safe=True)
