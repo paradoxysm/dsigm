@@ -16,8 +16,8 @@ children : array-like, shape (some_cores,), default=[]
 ```
 
 **Methods**
-[`__init__`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/CoreCluster.md#CoreCluster) : Instantiates a CoreCluster.
-[`_validate_init`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/CoreCluster.md#_validate_init) : Ensures all attributes have valid values.
+[`__init__`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/CoreCluster.md#CoreCluster) : Instantiates a CoreCluster.
+[`_validate_init`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/CoreCluster.md#_validate_init) : Ensures all attributes have valid values.
 
 ## __init__
 ```python
