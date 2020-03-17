@@ -346,14 +346,12 @@ class GMM:
 			The normalized log probabilities for each data sample in `data`.
 		"""
 		data = self._validate_data(data)
-		p_unweighted = []
+		p = []
 		for core in self.cores:
-			p_unweighted.append(core.logpdf(data))
-		p_unweighted = np.asarray(p_unweighted)
-		if p_unweighted.shape != (len(self.cores), len(data)):
+			p.append(core.logpdf(data, weight=True))
+		p = np.asarray(p)
+		if p.shape != (len(self.cores), len(data)):
 			raise RuntimeError("Expectation Step found erroneous shape")
-		delta_cores = [self.cores[i].delta for i in range(len(self.cores))]
-		p = p_unweighted + np.log(delta_cores)
 		p_norm = logsumexp(p, axis=0)
 		resp = p - p_norm
 		return p, p_norm, resp

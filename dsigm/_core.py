@@ -64,7 +64,7 @@ class Core:
 		else:
 			raise ValueError("Mismatch in dimensions between mu and sigma")
 
-	def pdf(self, data):
+	def pdf(self, data, weight=False):
 		"""
 		Multivariate normal probability density function.
 
@@ -73,6 +73,9 @@ class Core:
         data : array-like
             Quantiles, with the last axis of `data` denoting the features.
 
+		weight :  bool, default=False
+			Calculate the pdf with the delta of the Core.
+
         Returns
         -------
         pdf : ndarray or scalar
@@ -80,9 +83,13 @@ class Core:
 		"""
 		data = format_array(data)
 		self._validate_init()
-		return mvn.pdf(x=data, mean=self.mu, cov=self.sigma)
+		p = mvn.pdf(x=data, mean=self.mu, cov=self.sigma)
+		if weight:
+			return p * self.delta
+		else:
+			return p
 
-	def logpdf(self, data):
+	def logpdf(self, data, weight=False):
 		"""
 		Log of multivariate normal probability density function.
 
@@ -91,6 +98,9 @@ class Core:
         data : array-like
             Quantiles, with the last axis of `data` denoting the features.
 
+		weight :  bool, default=False
+			Calculate the logpdf with the delta of the Core.
+
         Returns
         -------
         pdf : ndarray or scalar
@@ -98,7 +108,11 @@ class Core:
 		"""
 		data = format_array(data)
 		self._validate_init()
-		return mvn.logpdf(x=data, mean=self.mu, cov=self.sigma)
+		p = mvn.logpdf(x=data, mean=self.mu, cov=self.sigma)
+		if weight:
+			return p + np.log(self.delta)
+		else:
+			return p
 
 class CoreCluster:
 	"""
