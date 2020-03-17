@@ -69,17 +69,17 @@ class Core:
 		Multivariate normal probability density function.
 
 		Parameters
-        ----------
-        data : array-like
-            Quantiles, with the last axis of `data` denoting the features.
+		----------
+		data : array-like
+			Quantiles, with the last axis of `data` denoting the features.
 
 		weight :  bool, default=False
 			Calculate the pdf with the delta of the Core.
 
-        Returns
-        -------
-        pdf : ndarray or scalar
-            Probability density function evaluated at `data`.
+		Returns
+		-------
+		pdf : ndarray or scalar
+			Probability density function evaluated at `data`.
 		"""
 		data = format_array(data)
 		self._validate_init()
@@ -94,17 +94,17 @@ class Core:
 		Log of multivariate normal probability density function.
 
 		Parameters
-        ----------
-        data : array-like
-            Quantiles, with the last axis of `data` denoting the features.
+		----------
+		data : array-like
+			Quantiles, with the last axis of `data` denoting the features.
 
 		weight :  bool, default=False
 			Calculate the logpdf with the delta of the Core.
 
-        Returns
-        -------
-        pdf : ndarray or scalar
-            Log probability density function evaluated at `data`.
+		Returns
+		-------
+		pdf : ndarray or scalar
+			Log probability density function evaluated at `data`.
 		"""
 		data = format_array(data)
 		self._validate_init()
