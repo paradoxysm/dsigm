@@ -47,7 +47,8 @@ class Core:
 
 	def _validate_init(self):
 		"""
-		Validate the argument types for __init__
+		Validate the attributes of the Core.
+		If `dim` has not yet been set, set it now.
 		"""
 		if self.mu.ndim != 1:
 			raise ValueError("Invalid argument provided for mu. Must be a vector")
@@ -63,24 +64,55 @@ class Core:
 		else:
 			raise ValueError("Mismatch in dimensions between mu and sigma")
 
-	def pdf(self, data):
+	def pdf(self, data, weight=False):
 		"""
 		Multivariate normal probability density function.
 
 		Parameters
-        ----------
-        data : array-like
-            Quantiles, with the last axis of `data` denoting the features.
+		----------
+		data : array-like
+			Quantiles, with the last axis of `data` denoting the features.
 
-        Returns
-        -------
-        pdf : ndarray or scalar
-            Probability density function evaluated at `datas`
+		weight :  bool, default=False
+			Calculate the pdf with the delta of the Core.
+
+		Returns
+		-------
+		pdf : ndarray or scalar
+			Probability density function evaluated at `data`.
 		"""
 		data = format_array(data)
 		self._validate_init()
-		return mvn.pdf(x=data, mean=self.mu, cov=self.sigma)
+		p = mvn.pdf(x=data, mean=self.mu, cov=self.sigma)
+		if weight:
+			return p * self.delta
+		else:
+			return p
 
+	def logpdf(self, data, weight=False):
+		"""
+		Log of multivariate normal probability density function.
+
+		Parameters
+		----------
+		data : array-like
+			Quantiles, with the last axis of `data` denoting the features.
+
+		weight :  bool, default=False
+			Calculate the logpdf with the delta of the Core.
+
+		Returns
+		-------
+		pdf : ndarray or scalar
+			Log probability density function evaluated at `data`.
+		"""
+		data = format_array(data)
+		self._validate_init()
+		p = mvn.logpdf(x=data, mean=self.mu, cov=self.sigma)
+		if weight:
+			return p + np.log(self.delta)
+		else:
+			return p
 
 class CoreCluster:
 	"""
@@ -113,7 +145,7 @@ class CoreCluster:
 
 	def _validate_init(self):
 		"""
-		Validate the argument types for __init__
+		Validate the attributes of the CoreCluster.
 		"""
 		if self.cores.ndim != 1 or (self.cores.ndim == 0 and self.cores.size > 0):
 			raise ValueError("Invalid argument provided for cores. Must be a list of Cores")
