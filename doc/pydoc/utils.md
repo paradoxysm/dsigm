@@ -3,8 +3,8 @@
 A collection of utility functions.
 
 **functions**
-[`format_array`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/utils.md#format_array) : Format an array into an acceptable format.
-[`create_random_state`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/utils.md#create_random_state) : Create a RandomState.
+[`format_array`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/utils.md#format_array) : Format an array into an acceptable format.
+[`create_random_state`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/utils.md#create_random_state) : Create a RandomState.
 
 ## format_array
 ```python
