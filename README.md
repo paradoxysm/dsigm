@@ -40,7 +40,7 @@ See the [changelog](https://github.com/paradoxysm/dsigm/blob/master/CHANGES.md) 
 
 [![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability-percentage/paradoxysm/dsigm?style=flat-square)](https://codeclimate.com/github/paradoxysm/dsigm/maintainability)
 
-`dsigm` is still under development. As of `0.3.1 prerelease`, only the Self-stabilizing Gaussian Mixture Model (SGMM) has been implemented.
+`dsigm` is still under development. As of `0.3.1`, only the Self-stabilizing Gaussian Mixture Model (SGMM) has been implemented.
 
 There are three main branches for development and release. [`master`](https://github.com/paradoxysm/dsigm) is the current development build; [`staging`](https://github.com/paradoxysm/dsigm/tree/staging) is the staging branch for releases; [`release`](https://github.com/paradoxysm/dsigm/tree/release) is the current public release build.
 
