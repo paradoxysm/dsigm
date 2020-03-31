@@ -53,24 +53,24 @@ _data_range : array-like, shape (2, n_features)
 ```
 
 **Methods**
-[`__init__`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#__init__) : Instantiates an GMM.
-[`get_params`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#get_params) : Get the model parameters of the GMM.
-[`fit`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#fit) : Fit the model to some given data.
-[`predict`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#predict) : Label some given data to the best fitting component.
-[`score`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#score) : Calculate the per-sample log-likelihood of the model.
-[`bic`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#bic) : Calculate Bayesian Information Criterion.
-[`aic`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#aic) : Calculate Akaike Information Criterion.
-[`abic`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#abic) : Calculate a composite of the Akaike and Bayesian Information Criteria.
+- [`__init__`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#__init__) : Instantiates an GMM.
+- [`get_params`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#get_params) : Get the model parameters of the GMM.
+- [`fit`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#fit) : Fit the model to some given data.
+- [`predict`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#predict) : Label some given data to the best fitting component.
+- [`score`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#score) : Calculate the per-sample log-likelihood of the model.
+- [`bic`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#bic) : Calculate Bayesian Information Criterion.
+- [`aic`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#aic) : Calculate Akaike Information Criterion.
+- [`abic`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#abic) : Calculate a composite of the Akaike and Bayesian Information Criteria.
 
 **Private Methods**
-[`_validate_data`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#_validate_data) : Validate the given data to the correct format.
-[`_fit_single`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#_fit_single) : A single attempt at fitting with no stabilization.
-[`_estimate_parameters`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#_estimate_parameters) : Estimate new model parameters given posterior probabilities.
-[`_initialize`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#_initialize) : Initialize a set of components for the model.
-[`_initialize_core`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#_initialize_core) : Initialize a single component for the model.
-[`_expectation`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#_expectation) : Conduct the expectation step of the EM Algorithm.
-[`_maximization`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#_maximization) : Conduct the maximization step of the EM Algorithm.
-[`_n_parameters`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/GMM.md#_n_parameters) : Calculate the number of free parameters of the model.
+- [`_validate_data`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#_validate_data) : Validate the given data to the correct format.
+- [`_fit_single`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#_fit_single) : A single attempt at fitting with no stabilization.
+- [`_estimate_parameters`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#_estimate_parameters) : Estimate new model parameters given posterior probabilities.
+- [`_initialize`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#_initialize) : Initialize a set of components for the model.
+- [`_initialize_core`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#_initialize_core) : Initialize a single component for the model.
+- [`_expectation`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#_expectation) : Conduct the expectation step of the EM Algorithm.
+- [`_maximization`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#_maximization) : Conduct the maximization step of the EM Algorithm.
+- [`_n_parameters`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/GMM.md#_n_parameters) : Calculate the number of free parameters of the model.
 
 ## __init__
 ```python
