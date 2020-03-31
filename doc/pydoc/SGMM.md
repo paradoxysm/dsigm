@@ -63,14 +63,14 @@ _data_range : array-like, shape (2, n_features)
 ```
 
 **Methods**
-[`__init__`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/SGMM.md#__init__) : Instantiates an SGMM.
-[`fit`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/SGMM.md#fit) : Fit the model to some given data.
+- [`__init__`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/SGMM.md#__init__) : Instantiates an SGMM.
+- [`fit`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/SGMM.md#fit) : Fit the model to some given data.
 
 **Private Methods**
-[`_fit_stabilize`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/SGMM.md#_fit_stabilize) : A single attempt at fitting with stabilization.
-[`_truncate_interval`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/SGMM.md#_truncate_interval) : Truncates the search interval for stabilization.
-[`_halve_interval`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/SGMM.md#_halve_interval) : Halves the search interval for stabilization.
-[`_orient_stabilizer`](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc/SGMM.md#_orient_stabilizer) : Initializes the search interval for stabilization.
+- [`_fit_stabilize`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/SGMM.md#_fit_stabilize) : A single attempt at fitting with stabilization.
+- [`_truncate_interval`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/SGMM.md#_truncate_interval) : Truncates the search interval for stabilization.
+- [`_halve_interval`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/SGMM.md#_halve_interval) : Halves the search interval for stabilization.
+- [`_orient_stabilizer`](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc/SGMM.md#_orient_stabilizer) : Initializes the search interval for stabilization.
 
 ## __init__
 ```python
