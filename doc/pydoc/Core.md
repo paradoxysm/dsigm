@@ -20,10 +20,10 @@ cluster : CoreCluster, default=None
 ```
 
 **Methods**
-[`__init__`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/Core.md#__init__) : Instantiates a Core.
-[`_validate_init`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/Core.md#_validate_init) : Ensures all attributes have valid values.
-[`pdf`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/Core.md#pdf) : Calculate the probability densities for some given data.
-[`logpdf`](https://github.com/paradoxysm/dsigm/tree/master/doc/pydoc/Core.md#logpdf) : Calculate the log probability densities for some given data.
+- [`__init__`](https://github.com/paradoxysm/dsigm/blob/master/doc/pydoc/Core.md#__init__) : Instantiates a Core.
+- [`_validate_init`](https://github.com/paradoxysm/dsigm/blob/master/doc/pydoc/Core.md#_validate_init) : Ensures all attributes have valid values.
+- [`pdf`](https://github.com/paradoxysm/dsigm/blob/master/doc/pydoc/Core.md#pdf) : Calculate the probability densities for some given data.
+- [`logpdf`](https://github.com/paradoxysm/dsigm/blob/master/doc/pydoc/Core.md#logpdf) : Calculate the log probability densities for some given data.
 
 ## __init__
 ```python
@@ -67,7 +67,7 @@ Multivariate normal probability density function.
 ```
 data : array-like
 	Quantiles, with the last axis of `data` denoting the features.
-	
+
 weight :  bool, default=False
 	Calculate the pdf with the delta of the Core.
 ```
