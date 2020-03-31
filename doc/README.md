@@ -2,9 +2,9 @@
 
 All documentation for dsigm is located here!
 
-[**pydoc**](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/pydoc) : Documentation regarding python classes and functions.
+[**pydoc**](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/pydoc) : Documentation regarding python classes and functions.
 
-[**guides**](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/guides) : Guides on using DSIGM for cluster analysis and classification.
+[**guides**](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/guides) : Guides on using DSIGM for cluster analysis and classification.
 
 # DSIGM Overview
 
@@ -21,7 +21,7 @@ Self-stabilization is based on an exploratory approach attempting to minimize a 
 
 The SGMM approaches this optimization as iteratively narrowing an interval that contains *k'* until it converges on the ideal number of components. Beginning with the user-defined *k*, SGMM orients itself to produce this interval based on ABIC. It then repeatedly narrows the interval by splitting the interval at the midpoint and determining in which half-interval, *k'* is contained. This strategy can significantly cut the number of iterations, particularly for large *k'*.
 
-For specific implementation details on how SGMM self-stabilizes, see the guide [here](https://github.com/paradoxysm/dsigm/tree/0.3.1/doc/guides/SGMM_stabilization.ipynb).
+For specific implementation details on how SGMM self-stabilizes, see the guide [here](https://github.com/paradoxysm/dsigm/blob/0.3.1/doc/guides/SGMM_stabilization.ipynb).
 
 # DSG
 **Density Sensitive Grouping**
