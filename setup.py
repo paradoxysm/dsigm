@@ -13,6 +13,7 @@ setup(
 	version='0.3.1',
     description='Density-sensitive Self-stabilization of Independent Gaussian Mixtures (DSIGM) Clustering',
     long_description=(read('README.md') + '\n\n'),
+	long_description_content_type="text/markdown",
 	url='http://github.com/paradoxysm/dsigm',
 	download_url = 'https://github.com/paradoxysm/dsigm/archive/0.3.1.tar.gz',
     author='paradoxysm',
@@ -42,7 +43,7 @@ setup(
 		'Programming Language :: Python :: 3.7',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
-	'Topic :: Scientific/Engineering :: Bioinformatics',
+	'Topic :: Scientific/Engineering :: Bio-Informatics',
 	'Topic :: Scientific/Engineering :: Information Analysis',
 	'Intended Audience :: Science/Research'
     ],
