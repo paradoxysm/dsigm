@@ -1,4 +1,4 @@
-"""Self-stabilizing Gaussian Mixture Model"""
+"""Gaussian Mixture Model"""
 
 # Authors: Jeffrey Wang
 # License: BSD 3 clause
@@ -7,19 +7,16 @@ import numpy as np
 import warnings
 from sklearn.datasets import make_spd_matrix
 from sklearn.cluster import KMeans
+from scipy.special import logsumexp
 
-from ._utils import format_array, create_random_state
-from ._exceptions import ConvergenceWarning, InitializationWarning
-from . import Core
+from .._utils import format_array, create_random_state
+from .._exceptions import ConvergenceWarning, InitializationWarning
+from .. import Core
 
-class SGMM:
+class GMM:
 	"""
-	A modified Gaussian Mixture Model that stabilizes
-	the optimal number of components during fitting.
-
-	SGMM refines the number of components during each
-	iteration of the EM algorithm with a modified
-	Bayesian Information Criterion.
+	A Gaussian Mixture Model that fits a given number of
+	components to maximize the log-likelihood of the model.
 
 	Parameters
 	----------
@@ -28,23 +25,19 @@ class SGMM:
 
 	init : {'random', 'kmeans'}, default='kmeans'
 		The method used to initialize the weights, the means and the
-        precisions.
-        Must be one of::
-            'kmeans' : responsibilities are initialized using kmeans.
-            'random' : responsibilities are initialized randomly.
-
-	stabilize : int or None, default=0.05
-		The adaption rate for stabilization of the number of Cores.
-		If None, stabilization is disabled.
+        	precisions.
+		Must be one of::
+			'kmeans' : responsibilities are initialized using kmeans.
+			'random' : responsibilities are initialized randomly.
 
 	n_init : int, default=10
-		Number of times the SGMM  will be run with different
-        Core seeds. The final results will be the best output of
-        n_init consecutive runs in terms of inertia.
+		Number of times the GMM  will be run with different
+        	Core seeds. The final results will be the best output of
+        	n_init consecutive runs in terms of inertia.
 
-	max_iter : int, default=200
-		Maximum number of iterations of the SGMM for a
-        single run.
+	max_iter : int, default=100
+		Maximum number of iterations of the GMM for a
+      		single run.
 
 	tol : float, default=1e-3
 		Relative tolerance with regards to the difference in inertia
@@ -56,7 +49,7 @@ class SGMM:
 
 	random_state : None or int or RandomState, default=None
 		Determines random number generation for Core initialization. Use
-        an int to make the randomness deterministic.
+		an int to make the randomness deterministic.
 
 	Attributes
 	----------
@@ -76,12 +69,11 @@ class SGMM:
 	_data_range : array-like, shape (2, n_features)
 		The range that encompasses the data in each axis.
 	"""
-	def __init__(self, init_cores=5, init='kmeans', stabilize=0.05, n_init=10, max_iter=200,
+	def __init__(self, init_cores=5, init='kmeans',n_init=10, max_iter=100,
 					tol=1e-3, reg_covar=1e-6, random_state=None):
 		self.dim = -1
 		self.init_cores = init_cores
 		self.init = init
-		self.stabilize = stabilize
 		self.n_init = n_init
 		self.max_iter = max_iter
 		self.tol = tol
@@ -90,6 +82,29 @@ class SGMM:
 		self.inertia = -np.inf
 		self.cores = []
 		self._data_range = None
+		self.converged = False
+
+	def get_params(self):
+		"""
+		Return the parameters of the model.
+
+		Returns
+		-------
+		mu : array-like, shape (n_cores, n_features)
+			List of the means for all Cores in the model.
+
+		sigma : array-like, shape (n_cores, n_features, n_features)
+			List of the covariances for all Cores in the model.
+
+		delta : array-like, shape (n_cores, 1)
+			List of the weights for all Cores in the model.
+		"""
+		mu, sigma, delta = [], [], []
+		for c in self.cores:
+			mu.append(c.mu)
+			sigma.append(c.sigma)
+			delta.append(c.delta)
+		return np.asarray(mu), np.asarray(sigma), np.asarray(delta)
 
 	def fit(self, data):
 		"""
@@ -107,6 +122,11 @@ class SGMM:
 		data : array-like, shape (n_samples, n_features)
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
+
+		Returns
+		-------
+		self : GMM
+			Itself, now updated with fitted parameters.
 		"""
 		data = self._validate_data(data)
 		best_inertia, best_cores = self.inertia, self.cores
@@ -115,11 +135,10 @@ class SGMM:
 			if inertia > best_inertia:
 				best_inertia, best_cores = inertia, cores
 		if not self.converged:
-			warnings.warn('Initialization %d did not converge. '
+			warnings.warn('Initialization did not converge. '
                           'Try different init parameters, '
                           'or increase max_iter, tol '
-                          'or check for degenerate data.'
-                          % (init), ConvergenceWarning)
+                          'or check for degenerate data.', ConvergenceWarning)
 		self.cores, self.inertia = best_cores, best_inertia
 		return self
 
@@ -139,10 +158,12 @@ class SGMM:
 			Component labels.
 		"""
 		if len(self.cores) == 0:
-			warnings.warn('Model not initialized so prediction ignored.', InitializationWarning)
+			warnings.warn('Model not initialized so prediction ignored.',
+							InitializationWarning)
 		else:
 			data = self._validate_data(data)
-			estimates = np.asarray(self._expectation(data)).T
+			p, p_norm, resp = self._expectation(data)
+			estimates = np.asarray(p).T
 			return estimates.argmax(axis=-1)
 
 	def _validate_data(self, data):
@@ -197,15 +218,41 @@ class SGMM:
 		self._initialize(data)
 		self.inertia = -np.inf
 		for iter in range(1, self.max_iter + 1):
-			p = self._expectation(data)
-			self._maximization(data, p)
-			prev_inertia, self.inertia = self.inertia, self.score(p)
+			p, p_norm, resp = self._expectation(data)
+			self._maximization(data, resp)
+			prev_inertia, self.inertia = self.inertia, np.mean(p_norm)
 			if np.abs(self.inertia - prev_inertia) < self.tol:
 				self.converged = True
 				break
-			if self.stabilize is not None:
-				self._stabilize(data)
 		return self.inertia, self.cores
+
+	def _estimate_parameters(self, data, resp):
+		"""
+		Estimate model parameters.
+
+		Parameters
+		----------
+		data : array-like, shape (n_samples, n_features)
+			List of `n_features`-dimensional data points.
+			Each row corresponds to a single data point.
+
+		resp : array-like, shape (n_cores, n_samples)
+			The normalized log probabilities for each data sample in `data`.
+
+		Returns
+		-------
+		params : dict
+			Estimated parameters for the model.
+		"""
+		delta = np.sum(resp, axis=1) + 10 * np.finfo(resp.dtype).eps
+		mu = np.dot(resp, data) / delta[:,np.newaxis]
+		sigma = np.empty((len(resp), self.dim, self.dim))
+		for k in range(len(resp)):
+			diff = data - mu[k]
+			sigma[k] = np.dot(resp[k,:] * diff.T, diff) / delta[k]
+			sigma[k].flat[::self.dim + 1] += self.reg_covar
+		delta = (delta / len(data))[:,np.newaxis]
+		return {'mu':mu, 'sigma':sigma, 'delta':delta}
 
 	def _initialize(self, data):
 		"""
@@ -225,49 +272,25 @@ class SGMM:
 		data = self._validate_data(data)
 		self._data_range = np.asarray([np.min(data, axis=0), np.max(data, axis=0)])
 		cores = []
-		params = self._estimate_parameters(data)
+		params = None
+		if self.init == 'kmeans':
+			resp = np.zeros((len(data), self.init_cores))
+			label = KMeans(n_clusters=self.init_cores, n_init=1,
+							random_state=self.random_state).fit(data).labels_
+			resp[np.arange(len(data)), label] = 1
+			params = self._estimate_parameters(data, resp.T)
+		elif self.init == 'random':
+			none = np.full((self.init_cores,), None)
+			params = {'mu':none, 'sigma':none, 'delta':none}
+		else:
+			raise ValueError("Unimplemented initialization method '%s'"
+                             % self.init)
 		for n in range(self.init_cores):
 			mu, sigma, delta = params['mu'][n], params['sigma'][n], params['delta'][n]
 			core = self._initialize_core(mu=mu, sigma=sigma, delta=delta)
 			cores.append(core)
 		self.cores = np.asarray(cores)
 		return self.cores
-
-	def _estimate_parameters(self, data):
-		"""
-		Initialize model parameters.
-
-		Parameters
-		----------
-		data : array-like, shape (n_samples, n_features)
-			List of `n_features`-dimensional data points.
-			Each row corresponds to a single data point.
-
-		Returns
-		-------
-		params : dict
-			Initial parameters for the model.
-		"""
-		if self.init == 'kmeans':
-			resp = np.zeros((len(data), self.init_cores))
-			label = KMeans(n_clusters=self.init_cores, n_init=1,
-							random_state=self.random_state).fit(data).labels_
-			resp[np.arange(len(data)), label] = 1
-			delta = np.sum(resp, axis=0) + 10 * np.finfo(resp.dtype).eps
-			mu = np.dot(resp.T, data) / delta[:,np.newaxis]
-			sigma = np.empty((self.init_cores, self.dim, self.dim))
-			for k in range(self.init_cores):
-				diff = data - mu[k]
-				sigma[k] = np.dot(resp[:, k] * diff.T, diff) / delta[k]
-				sigma[k].flat[::self.dim + 1] += self.reg_covar
-			delta = (delta / len(data))[:,np.newaxis]
-			return {'mu':mu, 'sigma':sigma, 'delta':delta}
-		elif self.init == 'random':
-			none = np.full((self.init_cores,), None)
-			return {'mu':none, 'sigma':none, 'delta':none}
-		else:
-			raise ValueError("Unimplemented initialization method '%s'"
-                             % self.init)
 
 	def _initialize_core(self, mu=None, sigma=None, delta=None):
 		"""
@@ -296,13 +319,10 @@ class SGMM:
 					(self._data_range[1] - self._data_range[0]) + \
 					self._data_range[0]
 			sigma = make_spd_matrix(self.dim)
-			if len(self.cores):
-				delta = np.ones((1)) / len(self.cores)
-			else:
-				delta = np.ones((1)) / self.init_cores
+			delta = np.ones((1)) / self.init_cores
 			return Core(mu=mu, sigma=sigma, delta=delta)
 		else:
-			raise RuntimeError("Data Range hasn't been set, likely because SGMM hasn't been initialized yet")
+			raise RuntimeError("Data Range hasn't been set, likely because GMM hasn't been initialized yet")
 
 	def _expectation(self, data):
 		"""
@@ -317,18 +337,26 @@ class SGMM:
 		Returns
 		-------
 		p : array, shape (n_cores, n_samples)
-			Probabilities of samples under each Core.
+			Log probabilities of samples under each Core.
+
+		p_norm : array, shape (n_samples,)
+			Total log probabilities of each sample.
+
+		resp : array-like, shape (n_cores, n_samples)
+			The normalized log probabilities for each data sample in `data`.
 		"""
 		data = self._validate_data(data)
 		p = []
 		for core in self.cores:
-			p.append(core.pdf(data))
+			p.append(core.logpdf(data, weight=True))
 		p = np.asarray(p)
 		if p.shape != (len(self.cores), len(data)):
 			raise RuntimeError("Expectation Step found erroneous shape")
-		return p
+		p_norm = logsumexp(p, axis=0)
+		resp = p - p_norm
+		return p, p_norm, resp
 
-	def _maximization(self, data, prob):
+	def _maximization(self, data, resp):
 		"""
 		Conduct the maximization step.
 
@@ -338,29 +366,20 @@ class SGMM:
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
 
-		prob : array, shape (n_cores, n_samples)
-			Probabilities of samples under each Core.
+		resp : array-like, shape (n_cores, n_samples)
+			The normalized log probabilities for each data sample in `data`.
 		"""
 		data = self._validate_data(data)
-		delta_cores = [self.cores[i].delta for i in range(len(self.cores))]
-		b_vector = prob * delta_cores
-		b = b_vector / (np.sum(b_vector, axis=0) + 1e-8)
+		params = self._estimate_parameters(data, np.exp(resp))
 		for i in range(len(self.cores)):
-			mu = np.sum(b[i].reshape(len(data), 1) * data, axis=0) / np.sum(b[i] + 1e-8)
-			sigma = np.dot((b[i].reshape(len(data), 1) * (data - mu)).T,
-										(data - mu)) / np.sum(b[i] + 1e-8)
-			np.fill_diagonal(sigma, sigma.diagonal() + self.reg_covar)
-			delta = [np.mean(b[i])]
+			mu = params['mu'][i]
+			sigma = params['sigma'][i]
+			delta = params['delta'][i]
 			self.cores[i] = Core(mu=mu, sigma=sigma, delta=delta)
 
-	def _stabilize(self, data):
+	def score(self, data):
 		"""
-		Estimate the ideal number of Cores at the current step.
-		Change the cores in the model to fit this estimate.
-
-		New cores are seeded randomly within the data space.
-		Cores are removed based on their probability and overlap with
-		other Cores.
+		Compute the per-sample average log-likelihood.
 
 		Parameters
 		----------
@@ -368,46 +387,13 @@ class SGMM:
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
 
-		p : array, shape (n_cores, n_samples)
-			Probabilities of samples under each Core.
-		"""
-		p = self._expectation(data)
-		gradient = self.bic_gradient(data, p)
-		# DOESN'T CONVERGE WELL
-		'''
-			Using pre maximization p and post maximization p
-			???
-		'''
-		step = round(gradient * self.stabilize)
-		if step > 0:
-			fitness = []
-			for i in range(len(p)):
-				f = np.sum((p[i] - np.sum(np.delete(p, i, axis=0), axis=0)).clip(min=0))
-				fitness.append((f, i))
-			fitness = np.asarray(sorted(fitness, key=lambda x: x[1]))
-			step = step if step < len(self.cores) else 0
-			mask = fitness[:int(step), 1].astype(int)
-			if len(mask) > 0:
-				self.cores = np.delete(self.cores, mask, axis=0)
-		elif step < 0:
-			for i in range(np.abs(int(step))):
-				self.cores = np.concatenate((self.cores, [self._initialize_core()]))
-
-	def score(self, p):
-		"""
-		Compute the per-sample average log-likelihood.
-
-		Parameters
-		----------
-		p : array-like, shape (n_cores, n_samples)
-			Probabilities of samples under each Core.
-
 		Returns
 		-------
 		log_likelihood : float
 			Log likelihood of the model.
 		"""
-		return np.mean(np.sum(np.log(p+1e-8), axis=0))
+		p, p_norm, resp = self._expectation(data)
+		return np.mean(p_norm)
 
 	def bic(self, data):
 		"""
@@ -425,14 +411,14 @@ class SGMM:
 		bic : float
 			Bayesian Information Criterion. The lower the better.
 		"""
-		fit = -2 * self.score(self._expectation(data)) * len(data)
+		fit = -2 * self.score(data) * len(data)
 		penalty = self._n_parameters() * np.log(len(data))
 		return fit + penalty
 
-	def bic_gradient(self, data, p):
+	def aic(self, data):
 		"""
-		Return an approximate gradient of the Bayesian Information
-		Criterion for the current model on the input `data`.
+		Akaike Information Criterion for the current model
+		on the input `data`.
 
 		Parameters
 		----------
@@ -440,22 +426,38 @@ class SGMM:
 			List of `n_features`-dimensional data points.
 			Each row corresponds to a single data point.
 
-		p : array-like, shape (n_cores, n_samples)
-			Probabilities of samples under each Core.
-
-		Returns
 		-------
-		gradient : float
-			Estimated gradient of the curve. Positive gradients
-			imply excess Cores, while negative gradients imply
-			lack of Cores.
+		aic : float
+			Akaike Information Criterion. The lower the better.
 		"""
-		score = np.exp(self.score(p))
-		fit_coeff = (len(self.cores) * (1 - score)) / (score + 1e-8)
-		fit_gradient = -2 * (90 / (len(self.cores) * (len(self.cores) + fit_coeff))) * len(data)
-		penalty_gradient = (np.square(self.dim) + 1.5 * self.dim + 1) * np.log(len(data))
-		gradient = fit_gradient + penalty_gradient
-		return gradient
+		fit = -2 * self.score(data) * len(data)
+		penalty = 2 * self._n_parameters()
+		return fit + penalty
+
+	def abic(self, data, bic_weight=0.5):
+		"""
+		Weighted composite of the AIC and BIC for
+		the current model on the input `data`.
+
+		Parameters
+		----------
+		data : array-like, shape (n_samples, n_features)
+			List of `n_features`-dimensional data points.
+			Each row corresponds to a single data point.
+
+		bic_weight : float, default=0.5
+			A float within [0., 1.] that determines the
+			weighting of BIC scores to AIC scores in
+			calculating the ABIC composite.
+
+		-------
+		abic : float
+			Weighted average of Akaike Information Criterion
+			and Bayesian Information Criterion.
+			The lower the better.
+		"""
+		return np.average([self.bic(data), self.aic(data)],
+							weights=[bic_weight, 1-bic_weight])
 
 	def _n_parameters(self):
 		"""
